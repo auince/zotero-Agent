@@ -115,6 +115,7 @@ var ResearchAgentSidebar = {
       .research-agent-message-content,.research-agent-answer{-moz-user-select:text!important;user-select:text!important;cursor:text}.research-agent-message-actions{user-select:none}
       .research-agent-quick-prompts{display:flex;flex-wrap:wrap;gap:5px;padding:0 1px}.research-agent-quick-prompts-label{width:100%;margin-bottom:1px;color:var(--fill-secondary,#9d9d9d);font-size:.78em;font-weight:600}.research-agent-quick-prompts button{min-height:25px;padding:3px 7px;border-radius:999px;background:transparent;color:var(--fill-secondary,#b7b7b7);font-size:.8em}.research-agent-quick-prompts button:hover:not(:disabled){color:var(--ra-accent);background:rgba(120,168,255,.1)}
       .research-agent-math{color:inherit}.research-agent-math.is-display{display:block;max-width:100%;margin:.8em 0;padding:.55em .7em;overflow-x:auto;border:1px solid var(--ra-border);border-radius:7px;background:rgba(255,255,255,.025);text-align:center}.research-agent-math.has-error{white-space:pre-wrap;text-align:left;color:#e6a8a8;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.research-agent-math .katex-display{margin:0}.research-agent-math .katex{font-size:1.04em}
+      .research-agent-notes-layout{display:flex;flex:1;min-height:0;gap:8px}.research-agent-note-list{display:flex;flex:0 0 38%;min-width:130px;flex-direction:column;gap:5px;overflow:auto}.research-agent-note-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left}.research-agent-note-item.is-active{border-color:rgba(120,168,255,.7);background:var(--ra-accent-weak)}.research-agent-note-item small{color:var(--fill-secondary,#a3a3a3);font-size:.78em}.research-agent-note-preview{flex:1;min-width:0;overflow:auto;padding:11px;border:1px solid var(--ra-border);border-radius:9px;background:var(--ra-surface)}.research-agent-note-empty{margin:auto;color:var(--fill-secondary,#a3a3a3);text-align:center}.research-agent-note-preview .research-agent-message-content{white-space:normal}.research-agent-note-actions{display:flex;flex-wrap:wrap;gap:6px}
     `;
     body.append(style);
     const root = doc.createElement("div"); root.className = "research-agent";
@@ -123,19 +124,24 @@ var ResearchAgentSidebar = {
     const sessionPanel = doc.createElement("section"); sessionPanel.className = "research-agent-panel";
     const chatPanel = doc.createElement("section"); chatPanel.className = "research-agent-panel is-active";
     const knowledgePanel = doc.createElement("section"); knowledgePanel.className = "research-agent-panel";
+    const notesPanel = doc.createElement("section"); notesPanel.className = "research-agent-panel";
     const sessionTab = this.button(doc, "会话", () => activate("sessions")); sessionTab.classList.add("research-agent-tab", "research-agent-session-button");
     const chatTab = this.button(doc, "✦ 聊天", () => activate("chat")); chatTab.classList.add("research-agent-tab", "is-active");
-    const knowledgeTab = this.button(doc, "▦ 知识库", () => activate("knowledge")); knowledgeTab.classList.add("research-agent-tab"); tabs.append(sessionTab, chatTab, knowledgeTab);
+    const knowledgeTab = this.button(doc, "▦ 知识库", () => activate("knowledge")); knowledgeTab.classList.add("research-agent-tab");
+    const notesTab = this.button(doc, "笔记", () => activate("notes")); notesTab.classList.add("research-agent-tab"); tabs.append(sessionTab, chatTab, knowledgeTab, notesTab);
     const activate = (page) => {
       const chat = page === "chat";
       const sessions = page === "sessions";
       chatPanel.classList.toggle("is-active", chat);
       sessionPanel.classList.toggle("is-active", sessions);
       knowledgePanel.classList.toggle("is-active", page === "knowledge");
+      notesPanel.classList.toggle("is-active", page === "notes");
       chatTab.classList.toggle("is-active", chat);
       sessionTab.classList.toggle("is-active", sessions);
       knowledgeTab.classList.toggle("is-active", page === "knowledge");
+      notesTab.classList.toggle("is-active", page === "notes");
       if (page === "knowledge") refreshEntries().catch((error) => { Zotero.logError(error); status.textContent = `错误：${error.message}`; });
+      if (page === "notes") refreshNotes().catch((error) => { Zotero.logError(error); status.textContent = `无法读取笔记：${error.message}`; });
     };
 
     const state = { active: null, summaries: [], knowledgeBases: [] };
@@ -393,9 +399,50 @@ var ResearchAgentSidebar = {
     const selectedKeys = () => [...entries.selectedOptions].map((option) => option.value);
     const refreshEntries = async () => { const records = await ResearchAgentIndexer.listEntries(); entries.replaceChildren(); for (const record of records) { const option = doc.createElement("option"); option.value = record.key; option.textContent = `${record.title} [${record.key}] — ${record.collectionPath.join(" / ")}`; entries.append(option); } if (!records.length) { const option = doc.createElement("option"); option.disabled = true; option.textContent = "尚未嵌入任何文献"; entries.append(option); } };
     const entryActions = doc.createElement("div"); entryActions.className = "research-agent-actions";
-    entryActions.append(this.button(doc, "刷新", refreshEntries), this.button(doc, "重嵌入所选", () => startJob((callback) => ResearchAgentIndexer.startReembedEntries(selectedKeys(), callback))), this.button(doc, "移除所选", async () => { const keys = selectedKeys(); if (!keys.length || !doc.defaultView.confirm(`从本地知识库移除 ${keys.length} 个条目？Zotero 原始文献不会被删除。`)) return; status.textContent = await ResearchAgentIndexer.removeEntries(keys); await refreshEntries(); }), this.button(doc, "生成今日笔记", async () => { status.textContent = await ResearchAgentDailyNotes.runNow(); }));
+    entryActions.append(this.button(doc, "刷新", refreshEntries), this.button(doc, "重嵌入所选", () => startJob((callback) => ResearchAgentIndexer.startReembedEntries(selectedKeys(), callback))), this.button(doc, "移除所选", async () => { const keys = selectedKeys(); if (!keys.length || !doc.defaultView.confirm(`从本地知识库移除 ${keys.length} 个条目？Zotero 原始文献不会被删除。`)) return; status.textContent = await ResearchAgentIndexer.removeEntries(keys); await refreshEntries(); }), this.button(doc, "生成今日笔记", () => generateTodayNote()));
     management.append(managementTitle, entryCopy, entries, entryActions); knowledgePanel.append(indexCard, management);
-    root.append(tabs, status, sessionPanel, chatPanel, knowledgePanel); body.append(root); resizeInput(); initializeSessions().catch((error) => { Zotero.logError(error); status.textContent = `无法载入会话：${error.message}`; });
+    const notesCard = doc.createElement("div"); notesCard.className = "research-agent-card";
+    const notesTitle = doc.createElement("div"); notesTitle.className = "research-agent-card-title"; notesTitle.textContent = "每日研究笔记";
+    const notesCopy = doc.createElement("p"); notesCopy.className = "research-agent-card-copy"; notesCopy.textContent = "每天的对话会提炼为一个可检索的本地 Markdown 笔记，保留代表性标题、问题、思考与引用论文。重复生成同一天时会更新同一份笔记。";
+    const noteActions = doc.createElement("div"); noteActions.className = "research-agent-note-actions";
+    const noteLayout = doc.createElement("div"); noteLayout.className = "research-agent-notes-layout";
+    const noteList = doc.createElement("div"); noteList.className = "research-agent-note-list";
+    const notePreview = doc.createElement("div"); notePreview.className = "research-agent-note-preview";
+    let activeNoteFilename = null; let activeNoteContent = "";
+    const renderNotes = async (requestedFilename = activeNoteFilename) => {
+      const notes = await ResearchAgentStorage.listNotes();
+      noteList.replaceChildren(); notePreview.replaceChildren();
+      if (!notes.length) {
+        const empty = doc.createElement("div"); empty.className = "research-agent-note-empty"; empty.textContent = "还没有笔记。完成一轮对话后，可点击“生成今日笔记”。";
+        notePreview.append(empty); activeNoteFilename = null; activeNoteContent = ""; return;
+      }
+      const active = notes.find((note) => note.filename === requestedFilename) || notes[0];
+      activeNoteFilename = active.filename;
+      for (const note of notes) {
+        const item = this.button(doc, note.title, () => renderNotes(note.filename));
+        item.classList.add("research-agent-note-item"); item.classList.toggle("is-active", note.filename === active.filename);
+        const meta = doc.createElement("small"); meta.textContent = `${note.day || this.shortDate(note.updatedAt)} · ${note.questionCount || 0} 个问题 · ${note.insightCount || 0} 条思考`;
+        item.append(meta); noteList.append(item);
+      }
+      activeNoteContent = await ResearchAgentStorage.getNote(active.filename) || "";
+      const meta = doc.createElement("div"); meta.className = "research-agent-context-label"; meta.textContent = `${active.day || "未标注日期"} · ${active.questionCount || 0} 个问题 · ${active.insightCount || 0} 条思考`;
+      const content = doc.createElement("div"); content.className = "research-agent-message-content"; ResearchAgentMarkdown.render(doc, content, activeNoteContent);
+      notePreview.append(meta, content);
+      if (active.citations?.length) this.addCitations(doc, notePreview, active.citations.map((label) => ({ label })));
+    };
+    const generateTodayNote = async () => {
+      try { status.textContent = "正在整理今天的对话并生成笔记…"; const result = await ResearchAgentDailyNotes.runNow(); await renderNotes(); status.textContent = result; }
+      catch (error) { Zotero.logError(error); status.textContent = `生成笔记失败：${error.message}`; }
+    };
+    noteActions.append(
+      this.button(doc, "生成今日笔记", generateTodayNote),
+      this.button(doc, "刷新列表", () => renderNotes()),
+      this.button(doc, "复制当前笔记", () => copyText(activeNoteContent)),
+      this.button(doc, "在默认程序打开", async () => { if (!activeNoteFilename) return; await ResearchAgentStorage.openNote(activeNoteFilename); }),
+      this.button(doc, "打开笔记文件夹", async () => { await ResearchAgentStorage.openNotesDirectory(); })
+    );
+    noteLayout.append(noteList, notePreview); notesCard.append(notesTitle, notesCopy, noteActions, noteLayout); notesPanel.append(notesCard);
+    root.append(tabs, status, sessionPanel, chatPanel, knowledgePanel, notesPanel); body.append(root); resizeInput(); initializeSessions().catch((error) => { Zotero.logError(error); status.textContent = `无法载入会话：${error.message}`; });
   },
 
   button(doc, label, onClick) { const button = doc.createElement("button"); button.type = "button"; button.textContent = label; button.addEventListener("click", onClick); return button; },

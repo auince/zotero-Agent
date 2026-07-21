@@ -16,8 +16,8 @@ var ResearchAgentDailyNotes = {
 
   async runNow() {
     const day = this.dayKey(new Date());
-    const path = await this.create(day);
-    return path ? `Daily note updated: ${path}` : "There are no conversations to summarize today.";
+    const note = await this.create(day);
+    return note ? `已更新笔记：${note.path}` : "今天还没有可沉淀的完整对话。";
   },
 
   dayKey(date) {
@@ -33,23 +33,30 @@ var ResearchAgentDailyNotes = {
     const markdown = [
       `# ${digest.title}`,
       "",
-      `Date: ${day}`,
+      `日期：${day}`,
       "",
-      "## Questions",
+      "## 今日问题",
       ...digest.questions.map((question) => `- ${question}`),
       "",
-      "## Thinking and conclusions",
+      "## 思考与结论",
       ...digest.insights.map((insight) => `- ${insight}`),
       "",
-      "## Papers mentioned",
-      ...(cited.length ? cited.map((citation) => `- ${citation}`) : ["- No Zotero papers were cited in this day's conversations."]),
+      "## 提及的论文",
+      ...(cited.length ? cited.map((citation) => `- ${citation}`) : ["- 当日对话未引用 Zotero 文献。"]),
       "",
-      "## Conversation digest",
+      "## 对话摘要",
       digest.digest,
       ""
     ].join("\n");
-    const filename = `${day}-${this.slug(digest.title)}.md`;
-    return ResearchAgentStorage.writeNote(filename, markdown);
+    const existing = await ResearchAgentStorage.getNoteForDay(day);
+    const filename = existing?.filename || `${day}-${this.slug(digest.title)}.md`;
+    const path = await ResearchAgentStorage.writeNote(filename, markdown, {
+      day,
+      questionCount: digest.questions.length,
+      insightCount: digest.insights.length,
+      citations: cited
+    });
+    return { path, filename, title: digest.title };
   },
 
   async summarize(entries, day) {
@@ -57,7 +64,7 @@ var ResearchAgentDailyNotes = {
       title: this.fallbackTitle(entries[0].question),
       questions: entries.map((entry) => this.clean(entry.question)).slice(0, 6),
       insights: entries.map((entry) => this.clean(entry.answer)).slice(0, 4),
-      digest: `${entries.length} research conversation${entries.length === 1 ? "" : "s"} were captured. Review the questions and cited papers above.`
+      digest: `已沉淀 ${entries.length} 段研究对话；请结合上方问题、结论与引用论文继续追踪。`
     };
     const apiKey = Zotero.Prefs.get("extensions.researchAgent.deepseekAPIKey", true);
     if (!apiKey) return fallback;
@@ -70,7 +77,7 @@ var ResearchAgentDailyNotes = {
           temperature: 0.1,
           messages: [{
             role: "system",
-            content: "Turn the research conversations into a compact reusable note. Return ONLY JSON with title (max 12 words), questions (max 5 terse strings), insights (max 5 terse strings), and digest (max 90 words). Preserve uncertainty; do not invent facts."
+            content: "将以下研究对话沉淀为简洁、可检索的中文笔记。仅返回 JSON：title（代表性标题，不超过 18 个中文字符或 12 个英文单词）、questions（最多 5 条简短问题）、insights（最多 5 条简短思考或结论）、digest（最多 120 字）。保留不确定性、证据边界与未解决问题；不得虚构事实。"
           }, { role: "user", content: `Date: ${day}\n\n${transcript}` }],
           response_format: { type: "json_object" }
         })

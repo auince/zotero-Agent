@@ -7,6 +7,7 @@ var ResearchAgentStorage = {
   conversationIndexPath: null,
   conversationsDirectoryPath: null,
   settingsPath: null,
+  notesIndexPath: null,
 
   async initialize() {
     if (this.root) return;
@@ -16,6 +17,7 @@ var ResearchAgentStorage = {
     this.conversationIndexPath = this.join(this.root, "conversation-index.json");
     this.conversationsDirectoryPath = this.join(this.root, "conversations");
     this.settingsPath = this.join(this.root, "state.json");
+    this.notesIndexPath = this.join(this.root, "notes-index.json");
     await Zotero.File.createDirectoryIfMissingAsync(this.root);
     await Zotero.File.createDirectoryIfMissingAsync(this.conversationsDirectoryPath);
   },
@@ -218,11 +220,85 @@ var ResearchAgentStorage = {
     return this.join(this.root, "notes");
   },
 
-  async writeNote(filename, content) {
+  async getNoteIndex() {
+    await this.initialize();
+    const index = await this.readJSON(this.notesIndexPath, null);
+    if (index) return { version: 1, notes: index.notes || [] };
+    const migrated = { version: 1, notes: [] };
+    await this.migrateNoteIndex(migrated);
+    await this.writeJSON(this.notesIndexPath, migrated);
+    return migrated;
+  },
+
+  async migrateNoteIndex(index) {
+    const notes = this.notesDirectory();
+    const directory = Zotero.File.pathToFile(notes);
+    if (!directory.exists()) return;
+    const files = directory.directoryEntries;
+    while (files.hasMoreElements()) {
+      const file = files.getNext();
+      if (!file.isFile() || !/\.md$/i.test(file.leafName)) continue;
+      try {
+        const content = await Zotero.File.getContentsAsync(file.path);
+        index.notes.push(this.noteMetadata(file.leafName, content));
+      } catch (error) { Zotero.logError(error); }
+    }
+  },
+
+  noteMetadata(filename, content, metadata = {}) {
+    const title = String(content || "").match(/^#\s+(.+)$/m)?.[1]?.trim() || filename.replace(/^\d{4}-\d{2}-\d{2}-/, "").replace(/\.md$/i, "");
+    const day = metadata.day || filename.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] || "";
+    return {
+      filename,
+      day,
+      title,
+      updatedAt: metadata.updatedAt || new Date().toISOString(),
+      questionCount: Number(metadata.questionCount) || 0,
+      insightCount: Number(metadata.insightCount) || 0,
+      citations: metadata.citations || []
+    };
+  },
+
+  async listNotes() {
+    const index = await this.getNoteIndex();
+    return [...index.notes].sort((a, b) => `${b.day}|${b.updatedAt}`.localeCompare(`${a.day}|${a.updatedAt}`));
+  },
+
+  async getNote(filename) {
+    if (!filename) return null;
+    try { return await Zotero.File.getContentsAsync(this.join(this.notesDirectory(), filename)); }
+    catch (error) { if (error.name === "NotFoundError" || /no such file/i.test(error.message)) return null; throw error; }
+  },
+
+  async getNoteForDay(day) {
+    return (await this.listNotes()).find((note) => note.day === day) || null;
+  },
+
+  async writeNote(filename, content, metadata = {}) {
+    await this.initialize();
     const notes = this.notesDirectory();
     await Zotero.File.createDirectoryIfMissingAsync(notes);
     const path = this.join(notes, filename);
     await Zotero.File.putContentsAsync(path, content);
+    const index = await this.getNoteIndex();
+    const note = this.noteMetadata(filename, content, { ...metadata, updatedAt: new Date().toISOString() });
+    const position = index.notes.findIndex((entry) => entry.filename === filename);
+    if (position === -1) index.notes.push(note); else index.notes[position] = note;
+    await this.writeJSON(this.notesIndexPath, index);
+    return path;
+  },
+
+  async openNotesDirectory() {
+    await this.initialize();
+    const notes = this.notesDirectory();
+    await Zotero.File.createDirectoryIfMissingAsync(notes);
+    Zotero.launchFile(Zotero.File.pathToFile(notes));
+    return notes;
+  },
+
+  async openNote(filename) {
+    const path = this.join(this.notesDirectory(), filename);
+    Zotero.launchFile(Zotero.File.pathToFile(path));
     return path;
   },
 
