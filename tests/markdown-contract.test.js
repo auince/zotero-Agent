@@ -22,6 +22,9 @@ assert.equal(split.remaining, "第二段");
 const code = markdown.takeCompleteBlocks("```js\nconst x = 1;\n\nconst y = 2;\n```\n\n尾部");
 assert.equal(code.complete, "```js\nconst x = 1;\n\nconst y = 2;\n```\n\n");
 assert.equal(code.remaining, "尾部");
+const math = markdown.takeCompleteBlocks("\\[\na^2 + b^2 = c^2\n\\]\n继续生成");
+assert.equal(math.complete, "\\[\na^2 + b^2 = c^2\n\\]\n");
+assert.equal(math.remaining, "继续生成");
 
 const target = new Node("target");
 const stream = markdown.createStreamRenderer(doc, target);

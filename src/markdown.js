@@ -1,4 +1,4 @@
-/* Safe, dependency-free Markdown rendering for Zotero's privileged document. */
+/* Safe Markdown and local KaTeX rendering for Zotero's privileged document. */
 
 var ResearchAgentMarkdown = {
   render(doc, target, source) {
@@ -12,6 +12,7 @@ var ResearchAgentMarkdown = {
     while (index < lines.length) {
       if (!lines[index].trim()) { index++; continue; }
       if (/^\s*```/.test(lines[index])) { index = this.appendCodeBlock(doc, target, lines, index); continue; }
+      if (this.isMathBlockStart(lines[index])) { index = this.appendMathBlock(doc, target, lines, index); continue; }
       const heading = lines[index].match(/^\s{0,3}(#{1,6})\s+(.+?)\s*#*\s*$/);
       if (heading) { const node = doc.createElement(`h${heading[1].length}`); this.appendInline(doc, node, heading[2]); target.append(node); index++; continue; }
       if (/^\s{0,3}([-*_])(?:\s*\1){2,}\s*$/.test(lines[index])) { target.append(doc.createElement("hr")); index++; continue; }
@@ -32,6 +33,42 @@ var ResearchAgentMarkdown = {
     code.textContent = body.join("\n");
     const pre = doc.createElement("pre"); pre.append(code); target.append(pre);
     return index < lines.length ? index + 1 : index;
+  },
+
+  isMathBlockStart(line) {
+    return /^\s*(?:\$\$|\\\[)\s*$/.test(line)
+      || /^\s*\$\$.+\$\$\s*$/.test(line)
+      || /^\s*\\\[.+\\\]\s*$/.test(line);
+  },
+
+  appendMathBlock(doc, target, lines, index) {
+    const first = lines[index].trim();
+    const inlineDollar = first.match(/^\$\$(.+)\$\$$/);
+    const inlineBracket = first.match(/^\\\[(.+)\\\]$/);
+    if (inlineDollar || inlineBracket) {
+      this.appendMath(doc, target, (inlineDollar || inlineBracket)[1], true);
+      return index + 1;
+    }
+    const closing = first === "$$" ? "$$" : "\\]";
+    const body = []; index++;
+    while (index < lines.length && lines[index].trim() !== closing) body.push(lines[index++]);
+    this.appendMath(doc, target, body.join("\n"), true);
+    return index < lines.length ? index + 1 : index;
+  },
+
+  appendMath(doc, target, tex, displayMode) {
+    const node = doc.createElement(displayMode ? "div" : "span");
+    node.className = `research-agent-math${displayMode ? " is-display" : ""}`;
+    const fallback = displayMode ? `\\[\n${tex}\n\\]` : `$${tex}$`;
+    try {
+      if (typeof katex === "undefined" || !katex.renderToString) throw new Error("KaTeX is unavailable");
+      const markup = katex.renderToString(tex, { displayMode, throwOnError: false, strict: "ignore", trust: false });
+      const range = doc.createRange(); range.selectNodeContents(node);
+      node.append(range.createContextualFragment(markup));
+    } catch (error) {
+      node.classList.add("has-error"); node.textContent = fallback;
+    }
+    target.append(node);
   },
 
   appendQuote(doc, target, lines, index) {
@@ -80,7 +117,7 @@ var ResearchAgentMarkdown = {
   appendParagraph(doc, target, lines, index) {
     const body = [];
     while (index < lines.length && lines[index].trim()) {
-      if (body.length && (/^\s*```/.test(lines[index]) || /^\s*>/.test(lines[index]) || /^\s*[-+*]\s+/.test(lines[index]) || /^\s*\d+[.)]\s+/.test(lines[index]) || this.isTableStart(lines, index))) break;
+      if (body.length && (/^\s*```/.test(lines[index]) || this.isMathBlockStart(lines[index]) || /^\s*>/.test(lines[index]) || /^\s*[-+*]\s+/.test(lines[index]) || /^\s*\d+[.)]\s+/.test(lines[index]) || this.isTableStart(lines, index))) break;
       body.push(lines[index++]);
     }
     const paragraph = doc.createElement("p");
@@ -89,12 +126,14 @@ var ResearchAgentMarkdown = {
   },
 
   appendInline(doc, target, text) {
-    const token = /(`[^`]*`|\*\*[^*]+\*\*|__[^_]+__|~~[^~]+~~|\[[^\]]+\]\((?:https?:\/\/)[^\s)]+\)|https?:\/\/[^\s<]+)/g;
+    const token = /(`[^`]*`|\\\([^\n]*?\\\)|\$[^$\n]+\$|\*\*[^*]+\*\*|__[^_]+__|~~[^~]+~~|\[[^\]]+\]\((?:https?:\/\/)[^\s)]+\)|https?:\/\/[^\s<]+)/g;
     let cursor = 0;
     for (const match of String(text).matchAll(token)) {
       if (match.index > cursor) target.append(doc.createTextNode(text.slice(cursor, match.index)));
       const value = match[0];
       if (value.startsWith("`")) { const code = doc.createElement("code"); code.textContent = value.slice(1, -1); target.append(code); }
+      else if (value.startsWith("\\(")) this.appendMath(doc, target, value.slice(2, -2), false);
+      else if (value.startsWith("$")) this.appendMath(doc, target, value.slice(1, -1), false);
       else if (value.startsWith("**") || value.startsWith("__")) { const strong = doc.createElement("strong"); this.appendInline(doc, strong, value.slice(2, -2)); target.append(strong); }
       else if (value.startsWith("~~")) { const deleted = doc.createElement("del"); this.appendInline(doc, deleted, value.slice(2, -2)); target.append(deleted); }
       else if (value.startsWith("[")) { const parts = value.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/); if (parts) this.appendLink(doc, target, parts[1], parts[2]); else target.append(doc.createTextNode(value)); }
@@ -114,11 +153,15 @@ var ResearchAgentMarkdown = {
 
   takeCompleteBlocks(source) {
     const text = String(source || "").replace(/\r\n?/g, "\n");
-    let fence = false; let safeEnd = 0; let offset = 0;
+    let fence = false; let mathClosing = null; let safeEnd = 0; let offset = 0;
     for (const line of text.split(/(?<=\n)/)) {
+      const trimmed = line.trim();
       if (/^\s*```/.test(line)) fence = !fence;
+      const openedMath = !fence && !mathClosing && (trimmed === "$$" || trimmed === "\\[");
+      if (openedMath) mathClosing = trimmed === "$$" ? "$$" : "\\]";
       offset += line.length;
-      if (!fence && /^\s*\n$/.test(line)) safeEnd = offset;
+      if (!fence && !openedMath && mathClosing && trimmed === mathClosing) { mathClosing = null; safeEnd = offset; }
+      if (!fence && !mathClosing && /^\s*\n$/.test(line)) safeEnd = offset;
     }
     return { complete: text.slice(0, safeEnd), remaining: text.slice(safeEnd) };
   },

@@ -1,5 +1,7 @@
 /* global Services, Zotero */
 
+Services.scriptloader.loadSubScript(`${ResearchAgentRootURI}vendor/katex/katex.min.js`);
+
 for (const module of ["storage", "memory", "jobs", "semantic", "indexer", "tools", "agent", "daily-notes", "markdown", "sidebar"]) {
   Services.scriptloader.loadSubScript(`${ResearchAgentRootURI}src/${module}.js`);
 }
