@@ -61,7 +61,7 @@ var ResearchAgentTools = {
   },
 
   async searchWeb(query, limit) {
-    const braveKey = Zotero.Prefs.get("extensions.researchAgent.braveAPIKey");
+    const braveKey = Zotero.Prefs.get("extensions.researchAgent.braveAPIKey", true);
     if (braveKey) {
       const raw = await this.request("GET", `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${limit}`, {
         headers: { Accept: "application/json", "X-Subscription-Token": braveKey }
@@ -91,7 +91,7 @@ var ResearchAgentTools = {
   },
 
   async searchGitHubCode(query, limit) {
-    const token = Zotero.Prefs.get("extensions.researchAgent.githubToken");
+    const token = Zotero.Prefs.get("extensions.researchAgent.githubToken", true);
     const headers = { Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
     if (token) headers.Authorization = `Bearer ${token}`;
     const raw = await this.request("GET", `https://api.github.com/search/code?q=${encodeURIComponent(query)}&per_page=${limit}`, { headers });

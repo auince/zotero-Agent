@@ -40,13 +40,13 @@ var ResearchAgentPreferences = {
   },
 
   bindModel(id, preference) {
-    document.getElementById(id).addEventListener("change", (event) => Zotero.Prefs.set(preference, event.target.value));
+    document.getElementById(id).addEventListener("change", (event) => Zotero.Prefs.set(preference, event.target.value, true));
   },
 
   bindLivePreference(id, preference, numeric = false) {
     document.getElementById(id).addEventListener("input", (event) => {
       const value = numeric ? Math.max(16000, Number(event.target.value) || 360000) : event.target.value;
-      Zotero.Prefs.set(preference, value);
+      Zotero.Prefs.set(preference, value, true);
     });
   },
 
@@ -105,7 +105,7 @@ var ResearchAgentPreferences = {
       const data = await this.request("GET", this.endpoint(baseURL, "/models"), key);
       const models = (data.data || []).map((model) => model.id).filter(Boolean).sort();
       if (!models.length) throw new Error("服务商没有返回可用模型。");
-      this.setOptions("ra-deepseek-model", models, Zotero.Prefs.get("extensions.researchAgent.deepseekModel"));
+      this.setOptions("ra-deepseek-model", models, Zotero.Prefs.get("extensions.researchAgent.deepseekModel", true));
       this.setStatus("ra-deepseek-status", `已获取 ${models.length} 个模型，请选择后测试连通性。`);
     } catch (error) {
       this.setStatus("ra-deepseek-status", `获取模型失败：${error.message}`, true);
@@ -124,8 +124,8 @@ var ResearchAgentPreferences = {
       if (!models.length) throw new Error("服务商没有返回可用模型。");
       const embedding = models.filter((model) => /embed|bge-m3|text-embedding/i.test(model));
       const rerank = models.filter((model) => /rerank|bge-reranker/i.test(model));
-      this.setOptions("ra-embedding-model", embedding.length ? embedding : models, Zotero.Prefs.get("extensions.researchAgent.embeddingModel"));
-      this.setOptions("ra-rerank-model", rerank.length ? rerank : models, Zotero.Prefs.get("extensions.researchAgent.rerankModel"));
+      this.setOptions("ra-embedding-model", embedding.length ? embedding : models, Zotero.Prefs.get("extensions.researchAgent.embeddingModel", true));
+      this.setOptions("ra-rerank-model", rerank.length ? rerank : models, Zotero.Prefs.get("extensions.researchAgent.rerankModel", true));
       this.setStatus("ra-siliconflow-status", `已获取 ${models.length} 个模型，请分别选择嵌入与重排序模型。`);
     } catch (error) {
       this.setStatus("ra-siliconflow-status", `获取模型失败：${error.message}`, true);
@@ -149,7 +149,7 @@ var ResearchAgentPreferences = {
       "ra-embedding-model": "extensions.researchAgent.embeddingModel",
       "ra-rerank-model": "extensions.researchAgent.rerankModel"
     };
-    Zotero.Prefs.set(preferences[id], selected);
+    Zotero.Prefs.set(preferences[id], selected, true);
   },
 
   async testChat() {

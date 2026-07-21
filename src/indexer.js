@@ -42,9 +42,9 @@ var ResearchAgentIndexer = {
     if (!unique.length) throw new Error("There are no regular items to index.");
     const indexPromise = ResearchAgentStorage.getIndex().then((index) => {
       index.semantic = {
-        embeddingModel: Zotero.Prefs.get("extensions.researchAgent.embeddingModel") || "BAAI/bge-m3",
-        rerankModel: Zotero.Prefs.get("extensions.researchAgent.rerankModel") || "BAAI/bge-reranker-v2-m3",
-        enabled: Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey"))
+        embeddingModel: Zotero.Prefs.get("extensions.researchAgent.embeddingModel", true) || "BAAI/bge-m3",
+        rerankModel: Zotero.Prefs.get("extensions.researchAgent.rerankModel", true) || "BAAI/bge-reranker-v2-m3",
+        enabled: Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey", true))
       };
       return index;
     });
@@ -166,7 +166,7 @@ var ResearchAgentIndexer = {
       .split(/\n\s*\n+/)
       .map((paragraph) => paragraph.replace(/\s+/g, " ").trim())
       .filter((paragraph) => paragraph.length > 40);
-    const maxChars = Zotero.Prefs.get("extensions.researchAgent.maxChunkChars") || 1400;
+    const maxChars = Zotero.Prefs.get("extensions.researchAgent.maxChunkChars", true) || 1400;
     let sequence = 1;
     for (const paragraph of paragraphs) {
       for (const text of this.splitLongParagraph(paragraph, maxChars)) {
@@ -220,7 +220,7 @@ var ResearchAgentIndexer = {
     const terms = this.tokens(query);
     const selected = new Set(collectionIDs.map(String));
     const scopedChunks = selected.size ? index.chunks.filter((chunk) => selected.has(chunk.collectionID == null ? "unfiled" : String(chunk.collectionID))) : index.chunks;
-    const semanticReady = useSemantic && Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey")) && scopedChunks.some((chunk) => chunk.embedding);
+    const semanticReady = useSemantic && Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey", true)) && scopedChunks.some((chunk) => chunk.embedding);
     let queryEmbedding = null;
     if (semanticReady) {
       try { [queryEmbedding] = await ResearchAgentSemantic.embed([query]); } catch (error) { Zotero.logError(error); }

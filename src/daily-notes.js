@@ -2,7 +2,7 @@
 
 var ResearchAgentDailyNotes = {
   async runIfDue() {
-    if (!Zotero.Prefs.get("extensions.researchAgent.dailyNotesEnabled")) return;
+    if (!Zotero.Prefs.get("extensions.researchAgent.dailyNotesEnabled", true)) return;
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const day = this.dayKey(yesterday);
     const state = await ResearchAgentStorage.getState();
@@ -59,14 +59,14 @@ var ResearchAgentDailyNotes = {
       insights: entries.map((entry) => this.clean(entry.answer)).slice(0, 4),
       digest: `${entries.length} research conversation${entries.length === 1 ? "" : "s"} were captured. Review the questions and cited papers above.`
     };
-    const apiKey = Zotero.Prefs.get("extensions.researchAgent.deepseekAPIKey");
+    const apiKey = Zotero.Prefs.get("extensions.researchAgent.deepseekAPIKey", true);
     if (!apiKey) return fallback;
     const transcript = entries.map((entry, index) => `Conversation ${index + 1}\nQuestion: ${entry.question}\nAnswer: ${entry.answer}`).join("\n\n").slice(0, 50000);
     try {
-      const raw = await ResearchAgentTools.request("POST", `${(Zotero.Prefs.get("extensions.researchAgent.deepseekBaseURL") || "https://api.deepseek.com").replace(/\/$/, "")}/chat/completions`, {
+      const raw = await ResearchAgentTools.request("POST", `${(Zotero.Prefs.get("extensions.researchAgent.deepseekBaseURL", true) || "https://api.deepseek.com").replace(/\/$/, "")}/chat/completions`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: Zotero.Prefs.get("extensions.researchAgent.deepseekModel") || "deepseek-chat",
+          model: Zotero.Prefs.get("extensions.researchAgent.deepseekModel", true) || "deepseek-chat",
           temperature: 0.1,
           messages: [{
             role: "system",

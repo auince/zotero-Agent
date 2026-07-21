@@ -62,9 +62,9 @@ var ResearchAgentSidebar = {
     const newSession = this.button(doc, "新对话", () => createSession()); newSession.classList.add("research-agent-primary"); sessionBar.append(sessionTitle, newSession);
     const drawer = doc.createElement("div"); drawer.className = "research-agent-session-drawer";
     const sessionList = doc.createElement("div"); sessionList.className = "research-agent-session-list";
-    const syncToggle = doc.createElement("input"); syncToggle.type = "checkbox"; syncToggle.checked = Boolean(Zotero.Prefs.get("extensions.researchAgent.syncItemOnConversationSwitch"));
+    const syncToggle = doc.createElement("input"); syncToggle.type = "checkbox"; syncToggle.checked = Boolean(Zotero.Prefs.get("extensions.researchAgent.syncItemOnConversationSwitch", true));
     const syncLabel = doc.createElement("label"); syncLabel.className = "research-agent-session-toggle"; syncLabel.append(syncToggle, doc.createTextNode("切换会话时联动左侧文献"));
-    syncToggle.addEventListener("change", () => Zotero.Prefs.set("extensions.researchAgent.syncItemOnConversationSwitch", syncToggle.checked));
+    syncToggle.addEventListener("change", () => Zotero.Prefs.set("extensions.researchAgent.syncItemOnConversationSwitch", syncToggle.checked, true));
     const bindPaper = this.button(doc, "关联当前文献", () => bindCurrentPaper());
     drawer.append(sessionList, bindPaper, syncLabel);
     const rag = doc.createElement("div"); rag.className = "research-agent-rag";

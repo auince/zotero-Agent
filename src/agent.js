@@ -4,7 +4,7 @@ var ResearchAgentAgent = {
   systemPrompt: `You are a Zotero research agent. Use search_knowledge_base before making claims about the user's library. Use search_web for current external facts, search_arxiv for scholarly preprints, and search_github_code for implementation questions. Cite Zotero evidence as [item key] and external sources as Markdown links. Be concise, distinguish evidence from inference, and do not invent sources.`,
 
   async answer(question, { onEvent, conversation, rag } = {}) {
-    const apiKey = Zotero.Prefs.get("extensions.researchAgent.deepseekAPIKey");
+    const apiKey = Zotero.Prefs.get("extensions.researchAgent.deepseekAPIKey", true);
     if (!apiKey) throw new Error("请先在 Zotero 设置 → Research Agent 中填写 DeepSeek API Key。");
     const ragEnabled = rag ? Boolean(rag.enabled) : true;
     const tools = ResearchAgentTools.definitionsFor({ ragEnabled });
@@ -52,8 +52,8 @@ var ResearchAgentAgent = {
   },
 
   async completeStream(messages, apiKey, onEvent, tools) {
-    const baseURL = (Zotero.Prefs.get("extensions.researchAgent.deepseekBaseURL") || "https://api.deepseek.com").replace(/\/$/, "");
-    const model = Zotero.Prefs.get("extensions.researchAgent.deepseekModel") || "deepseek-chat";
+    const baseURL = (Zotero.Prefs.get("extensions.researchAgent.deepseekBaseURL", true) || "https://api.deepseek.com").replace(/\/$/, "");
+    const model = Zotero.Prefs.get("extensions.researchAgent.deepseekModel", true) || "deepseek-chat";
     const state = { content: "", reasoning: "", toolCalls: [] };
     let received = 0;
     let buffer = "";

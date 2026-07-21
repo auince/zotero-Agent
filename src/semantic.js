@@ -2,10 +2,10 @@
 
 var ResearchAgentSemantic = {
   async embed(texts) {
-    const key = Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey");
+    const key = Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey", true);
     if (!key) throw new Error("Set a SiliconFlow API key before building the semantic index.");
     const response = await this.request("/embeddings", {
-      model: Zotero.Prefs.get("extensions.researchAgent.embeddingModel") || "BAAI/bge-m3",
+      model: Zotero.Prefs.get("extensions.researchAgent.embeddingModel", true) || "BAAI/bge-m3",
       input: texts,
       encoding_format: "base64"
     }, key);
@@ -13,10 +13,10 @@ var ResearchAgentSemantic = {
   },
 
   async rerank(query, candidates, topN) {
-    const key = Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey");
+    const key = Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey", true);
     if (!key) throw new Error("Set a SiliconFlow API key before reranking results.");
     const response = await this.request("/rerank", {
-      model: Zotero.Prefs.get("extensions.researchAgent.rerankModel") || "BAAI/bge-reranker-v2-m3",
+      model: Zotero.Prefs.get("extensions.researchAgent.rerankModel", true) || "BAAI/bge-reranker-v2-m3",
       query,
       documents: candidates.map((candidate) => `${candidate.chunk.title}\n${candidate.chunk.text}`),
       top_n: Math.min(topN, candidates.length),
@@ -26,7 +26,7 @@ var ResearchAgentSemantic = {
   },
 
   async request(path, payload, key) {
-    const baseURL = (Zotero.Prefs.get("extensions.researchAgent.siliconFlowBaseURL") || "https://api.siliconflow.cn/v1").replace(/\/$/, "");
+    const baseURL = (Zotero.Prefs.get("extensions.researchAgent.siliconFlowBaseURL", true) || "https://api.siliconflow.cn/v1").replace(/\/$/, "");
     const response = await Zotero.HTTP.request("POST", `${baseURL}${path}`, {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify(payload),

@@ -4,7 +4,7 @@ var ResearchAgentMemory = {
   systemOverhead: 1800,
 
   limit() {
-    return Number(Zotero.Prefs.get("extensions.researchAgent.contextWindowTokens")) || 360000;
+    return Number(Zotero.Prefs.get("extensions.researchAgent.contextWindowTokens", true)) || 360000;
   },
 
   estimateTokens(text) {
@@ -102,10 +102,10 @@ var ResearchAgentMemory = {
     const fallback = this.extractive(transcript, 2600);
     if (!apiKey) return fallback;
     try {
-      const raw = await ResearchAgentTools.request("POST", `${(Zotero.Prefs.get("extensions.researchAgent.deepseekBaseURL") || "https://api.deepseek.com").replace(/\/$/, "")}/chat/completions`, {
+      const raw = await ResearchAgentTools.request("POST", `${(Zotero.Prefs.get("extensions.researchAgent.deepseekBaseURL", true) || "https://api.deepseek.com").replace(/\/$/, "")}/chat/completions`, {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
-          model: Zotero.Prefs.get("extensions.researchAgent.deepseekModel") || "deepseek-chat",
+          model: Zotero.Prefs.get("extensions.researchAgent.deepseekModel", true) || "deepseek-chat",
           temperature: 0.1,
           messages: [
             { role: "system", content: "将以下研究对话压缩为可检索的会话记忆。保留问题、结论、证据、未解决事项、论文键和重要限定条件。不要虚构信息；使用简洁中文，最多 1000 字。" },
