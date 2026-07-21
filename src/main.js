@@ -15,7 +15,7 @@ var ResearchAgent = {
     await Zotero.PreferencePanes.register({
       pluginID: this.id,
       label: "研究助手",
-      image: this.rootURI + "icons/research-agent.svg",
+      image: this.rootURI + "icons/research-agent.png",
       src: this.rootURI + "prefs.xhtml",
       scripts: [this.rootURI + "prefs-ui.js"]
     });
