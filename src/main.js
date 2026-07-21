@@ -5,7 +5,7 @@ for (const module of ["storage", "semantic", "indexer", "tools", "agent", "daily
 }
 
 var ResearchAgent = {
-  id: "research-agent@zotero.local",
+  id: "research-agent@zotero.example.com",
   rootURI: null,
   windows: new Set(),
   timer: null,
