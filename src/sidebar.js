@@ -9,8 +9,10 @@ var ResearchAgentSidebar = {
     this.sectionID = Zotero.ItemPaneManager.registerSection({
       paneID: "research-agent-chat",
       pluginID: "research-agent@zotero.example.com",
-      header: { l10nID: "research-agent-header", icon: `${rootURI}icons/research-agent.png` },
-      sidenav: { l10nID: "research-agent-header", icon: `${rootURI}icons/research-agent.png`, orderable: true },
+      // Zotero renders these narrow slots at the image's intrinsic size.
+      // Keep a dedicated 24px rendition so the icon is never cropped.
+      header: { l10nID: "research-agent-header", icon: `${rootURI}icons/research-agent-small.png` },
+      sidenav: { l10nID: "research-agent-header", icon: `${rootURI}icons/research-agent-small.png`, orderable: true },
       onRender: (props) => this.render(props)
     });
   },
