@@ -14,7 +14,7 @@ A Zotero 9 plugin MVP that turns the currently selected collection into a local,
 
 ## Install the prototype
 
-1. Use the included `research-agent-0.1.7.xpi` (or create it with the packaging command below).
+1. Use the included `research-agent-0.1.8.xpi` (or create it with the packaging command below).
 2. Zotero → **Tools → Add-ons** → gear icon → **Install Add-on From File…**.
 3. Restart Zotero. In an item's right-side details pane, open **Research Agent** (or click its side-navigation icon). The **Research Agent** settings tab is available in Zotero Settings.
 4. Go to Zotero **Settings → Research Agent** and set both your DeepSeek and SiliconFlow API keys. GitHub and Brave Search keys are optional.
@@ -35,8 +35,8 @@ A Zotero 9 plugin MVP that turns the currently selected collection into a local,
 ```sh
 node --check bootstrap.js
 for file in src/*.js chrome/content/chat.js; do node --check "$file"; done
-zip -X -r research-agent-0.1.7.xpi manifest.json bootstrap.js prefs.js prefs.xhtml chrome src locale icons LICENSE README.md
-unzip -t research-agent-0.1.7.xpi
+zip -X -r research-agent-0.1.8.xpi manifest.json bootstrap.js prefs.js prefs.xhtml chrome src locale icons LICENSE README.md
+unzip -t research-agent-0.1.8.xpi
 ```
 
 ## Deliberate MVP limits
