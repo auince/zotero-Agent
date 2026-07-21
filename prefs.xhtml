@@ -1,26 +1,55 @@
 <vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-      xmlns:html="http://www.w3.org/1999/xhtml">
-  <groupbox>
-    <label><html:h2>Research Agent</html:h2></label>
-    <description>API keys are stored in this Zotero profile and are never included in exports or Git commits.</description>
-    <html:label>DeepSeek API key</html:label>
-    <html:input type="password" preference="extensions.researchAgent.deepseekAPIKey" style="width: 34em"/>
-    <html:label>DeepSeek API base URL</html:label>
-    <html:input type="url" preference="extensions.researchAgent.deepseekBaseURL" style="width: 34em"/>
-    <html:label>DeepSeek model</html:label>
-    <html:input type="text" preference="extensions.researchAgent.deepseekModel" style="width: 22em"/>
-    <html:label>SiliconFlow API key (knowledge-base embedding and reranking)</html:label>
-    <html:input type="password" preference="extensions.researchAgent.siliconFlowAPIKey" style="width: 34em"/>
-    <html:label>SiliconFlow API base URL</html:label>
-    <html:input type="url" preference="extensions.researchAgent.siliconFlowBaseURL" style="width: 34em"/>
-    <html:label>Embedding model</html:label>
-    <html:input type="text" preference="extensions.researchAgent.embeddingModel" style="width: 28em"/>
-    <html:label>Rerank model</html:label>
-    <html:input type="text" preference="extensions.researchAgent.rerankModel" style="width: 28em"/>
-    <html:label>GitHub token (optional; improves source-code search limits)</html:label>
-    <html:input type="password" preference="extensions.researchAgent.githubToken" style="width: 34em"/>
-    <html:label>Brave Search API key (optional; otherwise DuckDuckGo HTML fallback is used)</html:label>
-    <html:input type="password" preference="extensions.researchAgent.braveAPIKey" style="width: 34em"/>
-    <checkbox label="Create one concise daily knowledge note" preference="extensions.researchAgent.dailyNotesEnabled"/>
-  </groupbox>
+      xmlns:html="http://www.w3.org/1999/xhtml"
+      onload="ResearchAgentPreferences.init()">
+  <html:style>
+    .research-agent-prefs { max-width: 760px; padding: 4px 8px 16px; color: var(--fill-primary, #1d2733); }
+    .research-agent-prefs h2 { margin: 0 0 4px; font-size: 1.35em; }
+    .research-agent-prefs .intro { margin: 0 0 14px; color: var(--fill-secondary, #687583); line-height: 1.45; }
+    .research-agent-prefs .service { margin: 10px 0; padding: 13px; border: 1px solid color-mix(in srgb, currentColor 14%, transparent); border-radius: 10px; background: color-mix(in srgb, #3478c5 3%, transparent); }
+    .research-agent-prefs .service-title { margin: 0 0 3px; font-size: 1.05em; font-weight: 700; }
+    .research-agent-prefs .service-note { margin: 0 0 10px; color: var(--fill-secondary, #687583); font-size: .92em; line-height: 1.4; }
+    .research-agent-prefs .field { display: grid; grid-template-columns: minmax(150px, 190px) minmax(0, 1fr); gap: 7px 12px; align-items: center; margin: 7px 0; }
+    .research-agent-prefs label { font-weight: 600; }
+    .research-agent-prefs input, .research-agent-prefs select { box-sizing: border-box; width: 100%; min-height: 29px; padding: 4px 7px; border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 6px; background: var(--material-sidepane, white); color: inherit; font: menu; }
+    .research-agent-prefs .actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .research-agent-prefs button { min-height: 29px; padding: 5px 10px; border: 1px solid #3478c5; border-radius: 7px; background: #3478c5; color: white; font: menu; font-weight: 600; cursor: pointer; }
+    .research-agent-prefs button.secondary { border-color: color-mix(in srgb, currentColor 20%, transparent); background: var(--material-sidepane, white); color: inherit; }
+    .research-agent-prefs button:disabled { opacity: .62; cursor: wait; }
+    .research-agent-prefs .status { display: none; margin-top: 9px; padding: 7px 9px; border-radius: 7px; background: #e9f2ff; color: #245f9e; font-size: .9em; line-height: 1.35; }
+    .research-agent-prefs .status.visible { display: block; }
+    .research-agent-prefs .status.error { background: #fff0f0; color: #9b3434; }
+    .research-agent-prefs .optional { margin-top: 13px; }
+  </html:style>
+  <html:main class="research-agent-prefs">
+    <html:h2>研究助手设置</html:h2>
+    <html:p class="intro">密钥仅保存在当前 Zotero 配置文件中。填写 API 地址和密钥后，点击“获取模型列表”即可从服务商 API 获取可选模型。</html:p>
+
+    <html:section class="service">
+      <html:h3 class="service-title">对话模型（DeepSeek / OpenAI 兼容 API）</html:h3>
+      <html:p class="service-note">用于流式问答、工具调用与每日笔记整理。</html:p>
+      <html:div class="field"><html:label for="ra-deepseek-key">API 密钥</html:label><html:input id="ra-deepseek-key" type="password" preference="extensions.researchAgent.deepseekAPIKey"/></html:div>
+      <html:div class="field"><html:label for="ra-deepseek-url">API 地址</html:label><html:input id="ra-deepseek-url" type="url" preference="extensions.researchAgent.deepseekBaseURL"/></html:div>
+      <html:div class="field"><html:label for="ra-deepseek-model">对话模型</html:label><html:select id="ra-deepseek-model" aria-label="对话模型"><html:option value="">请先获取模型列表</html:option></html:select></html:div>
+      <html:div class="actions"><html:button id="ra-fetch-deepseek-models" type="button">获取模型列表</html:button><html:button id="ra-test-deepseek" class="secondary" type="button">测试 API 与模型连通性</html:button></html:div>
+      <html:div id="ra-deepseek-status" class="status" role="status"/>
+    </html:section>
+
+    <html:section class="service">
+      <html:h3 class="service-title">知识库模型（硅基流动）</html:h3>
+      <html:p class="service-note">用于文献嵌入、语义检索与重排序。模型下拉列表同样来自服务商 API。</html:p>
+      <html:div class="field"><html:label for="ra-siliconflow-key">API 密钥</html:label><html:input id="ra-siliconflow-key" type="password" preference="extensions.researchAgent.siliconFlowAPIKey"/></html:div>
+      <html:div class="field"><html:label for="ra-siliconflow-url">API 地址</html:label><html:input id="ra-siliconflow-url" type="url" preference="extensions.researchAgent.siliconFlowBaseURL"/></html:div>
+      <html:div class="field"><html:label for="ra-embedding-model">嵌入模型</html:label><html:select id="ra-embedding-model" aria-label="嵌入模型"><html:option value="">请先获取模型列表</html:option></html:select></html:div>
+      <html:div class="field"><html:label for="ra-rerank-model">重排序模型</html:label><html:select id="ra-rerank-model" aria-label="重排序模型"><html:option value="">请先获取模型列表</html:option></html:select></html:div>
+      <html:div class="actions"><html:button id="ra-fetch-siliconflow-models" type="button">获取模型列表</html:button><html:button id="ra-test-siliconflow" class="secondary" type="button">测试 API 与模型连通性</html:button></html:div>
+      <html:div id="ra-siliconflow-status" class="status" role="status"/>
+    </html:section>
+
+    <html:section class="service optional">
+      <html:h3 class="service-title">可选检索服务</html:h3>
+      <html:div class="field"><html:label for="ra-github-token">GitHub 访问令牌</html:label><html:input id="ra-github-token" type="password" preference="extensions.researchAgent.githubToken"/></html:div>
+      <html:div class="field"><html:label for="ra-brave-key">Brave Search API 密钥</html:label><html:input id="ra-brave-key" type="password" preference="extensions.researchAgent.braveAPIKey"/></html:div>
+      <checkbox label="每天自动生成一条精炼知识笔记" preference="extensions.researchAgent.dailyNotesEnabled"/>
+    </html:section>
+  </html:main>
 </vbox>

@@ -12,9 +12,12 @@ var ResearchAgent = {
 
   async startup({ rootURI: pluginRootURI }) {
     this.rootURI = pluginRootURI;
-    Zotero.PreferencePanes.register({
+    await Zotero.PreferencePanes.register({
       pluginID: this.id,
-      src: this.rootURI + "prefs.xhtml"
+      label: "研究助手",
+      image: this.rootURI + "icons/research-agent.svg",
+      src: this.rootURI + "prefs.xhtml",
+      scripts: [this.rootURI + "prefs-ui.js"]
     });
     await ResearchAgentStorage.initialize();
     ResearchAgentSidebar.register(this.rootURI);

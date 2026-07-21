@@ -1,0 +1,158 @@
+/* global Zotero */
+
+var ResearchAgentPreferences = {
+  initialized: false,
+
+  init() {
+    if (this.initialized) return;
+    this.initialized = true;
+    const doc = document;
+    doc.getElementById("ra-fetch-deepseek-models").addEventListener("click", () => this.safely("ra-deepseek-status", () => this.fetchChatModels()));
+    doc.getElementById("ra-test-deepseek").addEventListener("click", () => this.safely("ra-deepseek-status", () => this.testChat()));
+    doc.getElementById("ra-fetch-siliconflow-models").addEventListener("click", () => this.safely("ra-siliconflow-status", () => this.fetchKnowledgeModels()));
+    doc.getElementById("ra-test-siliconflow").addEventListener("click", () => this.safely("ra-siliconflow-status", () => this.testKnowledge()));
+    this.bindModel("ra-deepseek-model", "extensions.researchAgent.deepseekModel");
+    this.bindModel("ra-embedding-model", "extensions.researchAgent.embeddingModel");
+    this.bindModel("ra-rerank-model", "extensions.researchAgent.rerankModel");
+    this.bindAutomaticFetch("ra-deepseek-key", "ra-deepseek-url", () => this.fetchChatModels());
+    this.bindAutomaticFetch("ra-siliconflow-key", "ra-siliconflow-url", () => this.fetchKnowledgeModels());
+  },
+
+  bindModel(id, preference) {
+    document.getElementById(id).addEventListener("change", (event) => Zotero.Prefs.set(preference, event.target.value));
+  },
+
+  bindAutomaticFetch(keyID, urlID, action) {
+    let timer;
+    const schedule = () => {
+      clearTimeout(timer);
+      if (this.value(keyID) && this.value(urlID)) timer = setTimeout(() => action().catch(() => {}), 650);
+    };
+    document.getElementById(keyID).addEventListener("change", schedule);
+    document.getElementById(urlID).addEventListener("change", schedule);
+  },
+
+  value(id) {
+    return document.getElementById(id).value.trim();
+  },
+
+  endpoint(baseURL, suffix) {
+    return `${baseURL.replace(/\/$/, "")}${suffix}`;
+  },
+
+  setStatus(id, text, error = false) {
+    const node = document.getElementById(id);
+    node.textContent = text;
+    node.classList.add("visible");
+    node.classList.toggle("error", error);
+  },
+
+  async safely(statusID, action) {
+    try {
+      await action();
+    } catch (error) {
+      this.setStatus(statusID, error.message, true);
+    }
+  },
+
+  async request(method, url, key, body) {
+    const response = await Zotero.HTTP.request(method, url, {
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: body ? JSON.stringify(body) : undefined,
+      responseType: "text",
+      timeout: 30000
+    });
+    const text = response.responseText || response.response || "{}";
+    const data = JSON.parse(text);
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    return data;
+  },
+
+  async fetchChatModels() {
+    const key = this.value("ra-deepseek-key");
+    const baseURL = this.value("ra-deepseek-url");
+    if (!key || !baseURL) throw new Error("请先填写对话模型的 API 密钥和 API 地址。");
+    this.setStatus("ra-deepseek-status", "正在从服务商获取模型列表…");
+    try {
+      const data = await this.request("GET", this.endpoint(baseURL, "/models"), key);
+      const models = (data.data || []).map((model) => model.id).filter(Boolean).sort();
+      if (!models.length) throw new Error("服务商没有返回可用模型。");
+      this.setOptions("ra-deepseek-model", models, Zotero.Prefs.get("extensions.researchAgent.deepseekModel"));
+      this.setStatus("ra-deepseek-status", `已获取 ${models.length} 个模型，请选择后测试连通性。`);
+    } catch (error) {
+      this.setStatus("ra-deepseek-status", `获取模型失败：${error.message}`, true);
+      throw error;
+    }
+  },
+
+  async fetchKnowledgeModels() {
+    const key = this.value("ra-siliconflow-key");
+    const baseURL = this.value("ra-siliconflow-url");
+    if (!key || !baseURL) throw new Error("请先填写硅基流动的 API 密钥和 API 地址。");
+    this.setStatus("ra-siliconflow-status", "正在从服务商获取模型列表…");
+    try {
+      const data = await this.request("GET", this.endpoint(baseURL, "/models"), key);
+      const models = (data.data || []).map((model) => model.id).filter(Boolean).sort();
+      if (!models.length) throw new Error("服务商没有返回可用模型。");
+      const embedding = models.filter((model) => /embed|bge-m3|text-embedding/i.test(model));
+      const rerank = models.filter((model) => /rerank|bge-reranker/i.test(model));
+      this.setOptions("ra-embedding-model", embedding.length ? embedding : models, Zotero.Prefs.get("extensions.researchAgent.embeddingModel"));
+      this.setOptions("ra-rerank-model", rerank.length ? rerank : models, Zotero.Prefs.get("extensions.researchAgent.rerankModel"));
+      this.setStatus("ra-siliconflow-status", `已获取 ${models.length} 个模型，请分别选择嵌入与重排序模型。`);
+    } catch (error) {
+      this.setStatus("ra-siliconflow-status", `获取模型失败：${error.message}`, true);
+      throw error;
+    }
+  },
+
+  setOptions(id, models, preferred) {
+    const select = document.getElementById(id);
+    select.replaceChildren();
+    for (const model of models) {
+      const option = document.createElement("option");
+      option.value = model;
+      option.textContent = model;
+      select.append(option);
+    }
+    const selected = models.includes(preferred) ? preferred : models[0];
+    select.value = selected;
+    const preferences = {
+      "ra-deepseek-model": "extensions.researchAgent.deepseekModel",
+      "ra-embedding-model": "extensions.researchAgent.embeddingModel",
+      "ra-rerank-model": "extensions.researchAgent.rerankModel"
+    };
+    Zotero.Prefs.set(preferences[id], selected);
+  },
+
+  async testChat() {
+    const key = this.value("ra-deepseek-key");
+    const baseURL = this.value("ra-deepseek-url");
+    const model = this.value("ra-deepseek-model");
+    if (!key || !baseURL || !model) throw new Error("请先填写 API 密钥、API 地址并获取并选择对话模型。");
+    this.setStatus("ra-deepseek-status", "正在测试 API 与模型连通性…");
+    try {
+      await this.request("POST", this.endpoint(baseURL, "/chat/completions"), key, {
+        model, messages: [{ role: "user", content: "请仅回复 OK" }], max_tokens: 8, temperature: 0, stream: false
+      });
+      this.setStatus("ra-deepseek-status", `连接成功：${model} 可用。`);
+    } catch (error) {
+      this.setStatus("ra-deepseek-status", `连接测试失败：${error.message}`, true);
+    }
+  },
+
+  async testKnowledge() {
+    const key = this.value("ra-siliconflow-key");
+    const baseURL = this.value("ra-siliconflow-url");
+    const embeddingModel = this.value("ra-embedding-model");
+    const rerankModel = this.value("ra-rerank-model");
+    if (!key || !baseURL || !embeddingModel || !rerankModel) throw new Error("请先填写 API 密钥、API 地址并获取并选择两个知识库模型。");
+    this.setStatus("ra-siliconflow-status", "正在测试嵌入与重排序模型…");
+    try {
+      await this.request("POST", this.endpoint(baseURL, "/embeddings"), key, { model: embeddingModel, input: ["连通性测试"] });
+      await this.request("POST", this.endpoint(baseURL, "/rerank"), key, { model: rerankModel, query: "测试", documents: ["测试文本"], top_n: 1, return_documents: false });
+      this.setStatus("ra-siliconflow-status", `连接成功：${embeddingModel} 与 ${rerankModel} 均可用。`);
+    } catch (error) {
+      this.setStatus("ra-siliconflow-status", `连接测试失败：${error.message}`, true);
+    }
+  }
+};
