@@ -2,6 +2,22 @@
 
 var ResearchAgentPreferences = {
   initialized: false,
+  startupTimer: null,
+
+  // Preference-pane scripts run in their own sandbox before the XHTML fragment
+  // is inserted. Inline onload handlers cannot see this sandbox. Poll briefly
+  // for the imported controls and bind them from the same script scope.
+  install() {
+    if (!document?.getElementById) return;
+    const startWhenReady = () => {
+      if (!document.getElementById("ra-fetch-deepseek-models")) {
+        this.startupTimer = setTimeout(startWhenReady, 25);
+        return;
+      }
+      this.init();
+    };
+    startWhenReady();
+  },
 
   init() {
     if (this.initialized) return;
@@ -168,3 +184,5 @@ var ResearchAgentPreferences = {
     }
   }
 };
+
+ResearchAgentPreferences.install();
