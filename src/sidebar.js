@@ -51,6 +51,20 @@ var ResearchAgentSidebar = {
       .research-agent-message:last-child { margin-bottom:0; }
       .research-agent-message.is-user { background:var(--ra-accent-weak); }
       .research-agent-role { display:block; margin-bottom:3px; color:var(--ra-accent); font-size:.84em; font-weight:700; }
+      .research-agent-response { background:var(--material-sidepane, #fff); border:1px solid color-mix(in srgb, var(--ra-accent) 18%, var(--ra-border)); }
+      .research-agent-answer { min-height:1.4em; white-space:pre-wrap; }
+      .research-agent-trace { margin-top:9px; border:1px solid color-mix(in srgb, currentColor 10%, transparent); border-radius:8px; background:color-mix(in srgb, currentColor 2.5%, transparent); }
+      .research-agent-trace summary { padding:7px 9px; color:var(--fill-secondary, #687583); cursor:pointer; font-size:.86em; font-weight:600; }
+      .research-agent-trace-body { display:flex; flex-direction:column; gap:5px; padding:0 8px 8px; }
+      .research-agent-trace-reasoning { padding:7px 8px; border-radius:6px; background:color-mix(in srgb, currentColor 3.5%, transparent); color:var(--fill-secondary, #687583); font-size:.88em; line-height:1.42; white-space:pre-wrap; }
+      .research-agent-tool-event { padding:6px 8px; border-radius:6px; background:#f1f3f5; color:#69727d; font-size:.84em; line-height:1.38; }
+      @media (prefers-color-scheme:dark) { .research-agent-tool-event { background:#262b31; color:#b8c0ca; } }
+      .research-agent-citations { display:none; margin-top:10px; padding-top:9px; border-top:1px solid var(--ra-border); }
+      .research-agent-citations.has-items { display:block; }
+      .research-agent-citations-title { margin-bottom:6px; color:var(--fill-secondary, #687583); font-size:.82em; font-weight:700; }
+      .research-agent-citation-list { display:flex; flex-wrap:wrap; gap:5px; }
+      .research-agent-citation { max-width:100%; overflow:hidden; padding:4px 7px; border-radius:999px; background:var(--ra-accent-weak); color:var(--ra-accent); font-size:.82em; overflow-wrap:anywhere; text-decoration:none; }
+      a.research-agent-citation:hover { text-decoration:underline; }
       .research-agent-composer { display:flex; flex-direction:column; gap:7px; }
       .research-agent textarea { box-sizing:border-box; width:100%; min-height:108px; max-height:34vh; padding:10px; resize:vertical; border:1px solid var(--ra-border); border-radius:10px; background:var(--material-sidepane, #fff); color:inherit; font:menu; line-height:1.42; }
       .research-agent textarea:focus { outline:2px solid color-mix(in srgb, var(--ra-accent) 48%, transparent); outline-offset:1px; }
@@ -124,11 +138,16 @@ var ResearchAgentSidebar = {
       resizeInput();
       send.disabled = true;
       status.textContent = "正在检索并组织回答…";
+      const responseView = this.createResponseView(doc, log);
       try {
-        this.addMessage(doc, log, "助手", await ResearchAgentAgent.answer(question), false);
-        status.textContent = "就绪";
+        const result = await ResearchAgentAgent.answer(question, {
+          onEvent: (event) => responseView.handle(event)
+        });
+        responseView.finish(result);
+        status.textContent = "回答完成";
       } catch (error) {
         Zotero.logError(error);
+        responseView.fail(error);
         status.textContent = `错误：${error.message}`;
       } finally {
         send.disabled = false;
@@ -256,5 +275,104 @@ var ResearchAgentSidebar = {
     message.append(label, doc.createTextNode(text));
     log.append(message);
     log.scrollTop = log.scrollHeight;
+  },
+
+  createResponseView(doc, log) {
+    const message = doc.createElement("div");
+    message.className = "research-agent-message research-agent-response";
+    const label = doc.createElement("span");
+    label.className = "research-agent-role";
+    label.textContent = "助手";
+    const answer = doc.createElement("div");
+    answer.className = "research-agent-answer";
+    answer.textContent = "正在准备回答…";
+    const trace = doc.createElement("details");
+    trace.className = "research-agent-trace";
+    trace.open = true;
+    const traceSummary = doc.createElement("summary");
+    traceSummary.textContent = "推理与检索过程";
+    const traceBody = doc.createElement("div");
+    traceBody.className = "research-agent-trace-body";
+    const citations = doc.createElement("div");
+    citations.className = "research-agent-citations";
+    const citationsTitle = doc.createElement("div");
+    citationsTitle.className = "research-agent-citations-title";
+    citationsTitle.textContent = "引用文献与来源";
+    const citationList = doc.createElement("div");
+    citationList.className = "research-agent-citation-list";
+    citations.append(citationsTitle, citationList);
+    trace.append(traceSummary, traceBody);
+    message.append(label, answer, trace, citations);
+    log.append(message);
+    log.scrollTop = log.scrollHeight;
+    let answerStarted = false;
+    let reasoningBlock = null;
+    let events = 0;
+    const addTrace = (text, className = "research-agent-tool-event") => {
+      const entry = doc.createElement("div");
+      entry.className = className;
+      entry.textContent = text;
+      traceBody.append(entry);
+      events++;
+      traceSummary.textContent = `推理与检索过程 · ${events} 步`;
+      log.scrollTop = log.scrollHeight;
+    };
+    const toolNames = {
+      search_knowledge_base: "检索本地知识库",
+      search_web: "搜索网页",
+      search_arxiv: "查询 arXiv",
+      search_github_code: "检索 GitHub 源码"
+    };
+    const description = (event) => {
+      const query = event.args?.query ? ` · ${event.args.query}` : "";
+      return `${toolNames[event.name] || event.name}${query}`;
+    };
+    return {
+      handle: (event) => {
+        if (event.type === "content") {
+          if (!answerStarted) { answer.textContent = ""; answerStarted = true; }
+          answer.append(doc.createTextNode(event.text));
+        } else if (event.type === "reasoning") {
+          if (!reasoningBlock) {
+            reasoningBlock = doc.createElement("div");
+            reasoningBlock.className = "research-agent-trace-reasoning";
+            traceBody.append(reasoningBlock);
+            events++;
+            traceSummary.textContent = `推理与检索过程 · ${events} 步`;
+          }
+          reasoningBlock.append(doc.createTextNode(event.text));
+        } else if (event.type === "tool-start") {
+          addTrace(`正在${description(event)}`);
+        } else if (event.type === "tool-finish") {
+          addTrace(`${description(event)} · 找到 ${event.count} 条结果`);
+        } else if (event.type === "tool-error") {
+          addTrace(`${description(event)} · 调用失败：${event.error}`);
+        }
+      },
+      finish: (result) => {
+        if (!answerStarted) answer.textContent = result.answer || "模型没有返回正文。";
+        if (!events) {
+          addTrace("模型直接生成回答，未调用外部检索工具。", "research-agent-tool-event");
+        }
+        trace.open = false;
+        for (const citation of result.citations || []) {
+          const entry = citation.url ? doc.createElement("a") : doc.createElement("span");
+          entry.className = "research-agent-citation";
+          entry.textContent = citation.label;
+          if (citation.url) {
+            entry.href = citation.url;
+            entry.target = "_blank";
+          }
+          citationList.append(entry);
+        }
+        citations.classList.toggle("has-items", citationList.childElementCount > 0);
+        log.scrollTop = log.scrollHeight;
+      },
+      fail: (error) => {
+        answer.textContent = `回答失败：${error.message}`;
+        addTrace("请求未完成；请检查模型配置或网络连接。");
+        trace.open = true;
+      }
+    };
   }
 };

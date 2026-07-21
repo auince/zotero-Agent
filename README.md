@@ -8,13 +8,13 @@ A Zotero 9 plugin MVP that turns the currently selected collection into a local,
 - **Hybrid hierarchical retrieval:** SiliconFlow `BAAI/bge-m3` embeddings retrieve semantic candidates; `BAAI/bge-reranker-v2-m3` reranks them. Results retain collection path, item key, chunk level, and paragraph number. Article metadata is a separate `metadata` chunk.
 - **Background knowledge-base management:** index the selected collection, selected Zotero articles, or every regular article in the active library. The manager lists local entries and can remove or re-embed selected entries without deleting Zotero items.
 - **Non-blocking indexing:** a sequential background queue reports article-level progress, yields to Zotero between articles, records per-item failures, and can be cancelled. Disabling or uninstalling the plugin cancels the queue; the in-flight network request is allowed to finish safely.
-- **DeepSeek agent:** uses OpenAI-compatible DeepSeek tool calls to choose among local knowledge-base retrieval, web search, arXiv search, and GitHub source-code search.
+- **DeepSeek agent:** streams its answer into the sidebar, shows provider-supplied reasoning and real-time tool activity, then collapses the trace and lists the retrieved Zotero papers and external sources.
 - **Local research memory:** each user/agent exchange is retained in a local JSONL log; once per day (or on demand), it becomes a compact Markdown note with a representative title, questions, insights, and cited Zotero papers.
 - **Privacy boundary:** the index, conversation log, and Markdown notes are in `<Zotero data directory>/research-agent/`. API keys are Zotero profile preferences, not files in this repository. Chunk text is sent to SiliconFlow during embedding and candidate text is sent during reranking; only the resulting vectors and local index are retained locally.
 
 ## Install the prototype
 
-1. Use the included `research-agent-0.1.8.xpi` (or create it with the packaging command below).
+1. Use the included `research-agent-0.1.9.xpi` (or create it with the packaging command below).
 2. Zotero → **Tools → Add-ons** → gear icon → **Install Add-on From File…**.
 3. Restart Zotero. In an item's right-side details pane, open **Research Agent** (or click its side-navigation icon). The **Research Agent** settings tab is available in Zotero Settings.
 4. Go to Zotero **Settings → Research Agent** and set both your DeepSeek and SiliconFlow API keys. GitHub and Brave Search keys are optional.
@@ -35,8 +35,9 @@ A Zotero 9 plugin MVP that turns the currently selected collection into a local,
 ```sh
 node --check bootstrap.js
 for file in src/*.js chrome/content/chat.js; do node --check "$file"; done
-zip -X -r research-agent-0.1.8.xpi manifest.json bootstrap.js prefs.js prefs.xhtml chrome src locale icons LICENSE README.md
-unzip -t research-agent-0.1.8.xpi
+node tests/indexer-contract.test.js && node tests/semantic-contract.test.js && node tests/jobs-contract.test.js && node tests/agent-stream-contract.test.js
+zip -X -r research-agent-0.1.9.xpi manifest.json bootstrap.js prefs.js prefs.xhtml chrome src locale icons LICENSE README.md
+unzip -t research-agent-0.1.9.xpi
 ```
 
 ## Deliberate MVP limits

@@ -1,0 +1,41 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const vm = require("node:vm");
+
+const events = [];
+const chunks = [
+  'data: {"choices":[{"delta":{"content":"流式"}}]}\n\n',
+  'data: {"choices":[{"delta":{"reasoning_content":"检索后作答"}}]}\n\n',
+  'data: {"choices":[{"delta":{"content":"回答"}}]}\n\n',
+  "data: [DONE]\n\n"
+];
+const context = {
+  Zotero: {
+    Prefs: { get: (key) => key.endsWith("APIKey") ? "key" : "deepseek-chat" },
+    HTTP: {
+      request: async (_method, _url, options) => {
+        const xhr = { responseText: "" };
+        options.requestObserver(xhr);
+        for (const chunk of chunks) {
+          xhr.responseText += chunk;
+          xhr.onprogress();
+        }
+        return xhr;
+      }
+    },
+    logError: () => {}
+  },
+  ResearchAgentStorage: { appendConversation: async () => {} },
+  ResearchAgentTools: { definitions: [], execute: async () => [] },
+  Set, JSON, Error
+};
+vm.createContext(context);
+vm.runInContext(fs.readFileSync("src/agent.js", "utf8"), context);
+
+(async () => {
+  const result = await context.ResearchAgentAgent.answer("test", { onEvent: (event) => events.push(event) });
+  assert.equal(result.answer, "流式回答");
+  assert.equal(events.filter((event) => event.type === "content").map((event) => event.text).join(""), "流式回答");
+  assert.equal(events.find((event) => event.type === "reasoning").text, "检索后作答");
+  console.log("Agent streaming contract passed.");
+})().catch((error) => { console.error(error); process.exitCode = 1; });
