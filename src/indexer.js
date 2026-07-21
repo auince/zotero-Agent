@@ -215,12 +215,12 @@ var ResearchAgentIndexer = {
     }
   },
 
-  async search(query, limit = 8, collectionIDs = []) {
+  async search(query, limit = 8, collectionIDs = [], { useSemantic = false } = {}) {
     const index = await ResearchAgentStorage.getIndex();
     const terms = this.tokens(query);
     const selected = new Set(collectionIDs.map(String));
     const scopedChunks = selected.size ? index.chunks.filter((chunk) => selected.has(chunk.collectionID == null ? "unfiled" : String(chunk.collectionID))) : index.chunks;
-    const semanticReady = Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey")) && scopedChunks.some((chunk) => chunk.embedding);
+    const semanticReady = useSemantic && Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey")) && scopedChunks.some((chunk) => chunk.embedding);
     let queryEmbedding = null;
     if (semanticReady) {
       try { [queryEmbedding] = await ResearchAgentSemantic.embed([query]); } catch (error) { Zotero.logError(error); }

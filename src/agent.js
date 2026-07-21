@@ -37,7 +37,7 @@ var ResearchAgentAgent = {
         this.emit(onEvent, { type: "tool-start", name: call.function.name, args });
         let result;
         try {
-          result = await ResearchAgentTools.execute(call.function.name, args, { collectionIDs: rag?.collectionIDs || [] });
+          result = await ResearchAgentTools.execute(call.function.name, args, { collectionIDs: rag?.collectionIDs || [], useSemantic: Boolean(rag?.useSemantic) });
           const found = this.extractCitations(call.function.name, result);
           citations.push(...found);
           this.emit(onEvent, { type: "tool-finish", name: call.function.name, args, count: Array.isArray(result) ? result.length : 0, citations: found });

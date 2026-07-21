@@ -111,7 +111,7 @@ var ResearchAgentSidebar = {
     ragToggle.addEventListener("change", () => {
       ragSelect.disabled = !ragToggle.checked;
       if (ragToggle.checked) {
-        ragNote.textContent = "请选择一个已嵌入的知识库；检索仅在该范围内进行。";
+        ragNote.textContent = "请选择一个已嵌入的知识库；检索仅在该范围内进行，并且不会调用硅基流动。";
         refreshRagBases().catch((error) => { Zotero.logError(error); status.textContent = `无法读取知识库：${error.message}`; });
       } else {
         ragNote.textContent = "未启用 RAG：仅分析当前左侧论文，不连接知识库或网络工具。";
@@ -193,7 +193,7 @@ var ResearchAgentSidebar = {
       if (ragToggle.checked) {
         const selectedBase = state.knowledgeBases.find((base) => base.id === ragSelect.value);
         if (!selectedBase) { status.textContent = "启用 RAG 后，请先选择一个具体知识库。"; return; }
-        ragConfig = { enabled: true, collectionIDs: [selectedBase.id], knowledgeBaseTitle: selectedBase.title };
+        ragConfig = { enabled: true, collectionIDs: [selectedBase.id], knowledgeBaseTitle: selectedBase.title, useSemantic: false };
       } else {
         const paper = currentItem();
         if (!paper) { status.textContent = "未启用 RAG 时，请先在左侧选择一篇论文。"; return; }
