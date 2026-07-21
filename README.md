@@ -12,7 +12,7 @@ A Zotero 9 plugin MVP that turns the currently selected collection into a local,
 
 ## Install the prototype
 
-1. Download `research-agent-0.1.0.xpi` from this repository's release assets (or create it with the packaging command below).
+1. Use the included `research-agent-0.1.0.xpi` (or create it with the packaging command below).
 2. Zotero → **Tools → Add-ons** → gear icon → **Install Add-on From File…**.
 3. Restart Zotero and open **Tools → Research Agent**.
 4. Go to Zotero **Settings → Research Agent** and set your DeepSeek API key. GitHub and Brave Search keys are optional.
