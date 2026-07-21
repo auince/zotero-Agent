@@ -46,6 +46,23 @@ var ResearchAgentSidebar = {
       .research-agent-citations{display:none;margin-top:10px;padding-top:9px;border-top:1px solid var(--ra-border)}.research-agent-citations.has-items{display:block}.research-agent-citations-title{margin-bottom:6px;color:var(--fill-secondary,#687583);font-size:.82em;font-weight:700}.research-agent-citation-list{display:flex;flex-wrap:wrap;gap:5px}.research-agent-citation{max-width:100%;overflow:hidden;padding:4px 7px;border-radius:999px;background:var(--ra-accent-weak);color:var(--ra-accent);font-size:.82em;overflow-wrap:anywhere;text-decoration:none}a.research-agent-citation:hover{text-decoration:underline}
       .research-agent-composer{display:flex;flex-direction:column;gap:7px}.research-agent textarea{box-sizing:border-box;width:100%;min-height:108px;max-height:34vh;padding:10px;resize:vertical;border:1px solid var(--ra-border);border-radius:10px;background:var(--material-sidepane,#fff);color:inherit;font:menu;line-height:1.42}.research-agent textarea:focus{outline:2px solid color-mix(in srgb,var(--ra-accent) 48%,transparent);outline-offset:1px}.research-agent-sendline{display:flex;align-items:center;justify-content:space-between;gap:8px}.research-agent-hint{color:var(--fill-secondary,#687583);font-size:.82em}.research-agent-remaining{margin-left:auto;color:var(--fill-secondary,#687583);font-size:.82em;white-space:nowrap}.research-agent-remaining.warning{color:#a56812}.research-agent-remaining.over{color:#a53c3c;font-weight:650}
       .research-agent-card{display:flex;flex-direction:column;gap:9px;padding:11px;border:1px solid var(--ra-border);border-radius:11px;background:color-mix(in srgb,currentColor 2%,transparent)}.research-agent-card-title{font-weight:700}.research-agent-card-copy{margin:0;color:var(--fill-secondary,#687583);font-size:.9em;line-height:1.38}.research-agent-actions{display:flex;flex-wrap:wrap;gap:6px}.research-agent-progress{width:100%;height:6px;accent-color:var(--ra-accent)}.research-agent-entry-list{flex:1;min-height:145px;width:100%;box-sizing:border-box;border:1px solid var(--ra-border);border-radius:8px;background:var(--material-sidepane,#fff);color:inherit;font:menu}.research-agent-entry-list option{padding:5px}
+
+      /* Codex-inspired: restrained surfaces, compact controls, and a single blue focus color. */
+      .research-agent{--ra-accent:#78a8ff;--ra-accent-weak:#183653;--ra-border:rgba(127,127,127,.26);--ra-surface:#282828;--ra-surface-raised:#303030;gap:9px;letter-spacing:.01em}
+      @media(prefers-color-scheme:dark){.research-agent{--ra-accent:#8ab4ff;--ra-accent-weak:#173653;--ra-border:rgba(255,255,255,.14);--ra-surface:#252525;--ra-surface-raised:#2d2d2d;color:#f1f1f1}}
+      .research-agent-top{gap:3px;padding:3px;border-radius:9px;background:var(--ra-surface);border-color:var(--ra-border)}
+      .research-agent-tab{min-height:29px;border-radius:6px;font-weight:600}.research-agent-tab.is-active{background:#4c8fe8;box-shadow:none}.research-agent-tab:hover{background:color-mix(in srgb,var(--ra-accent) 16%,var(--ra-surface-raised))}
+      .research-agent-status{padding:6px 9px;border:1px solid var(--ra-border);border-radius:7px;background:transparent;color:var(--fill-secondary,#9d9d9d);font-size:.82em}
+      .research-agent button{min-height:28px;padding:4px 8px;border-color:var(--ra-border);border-radius:6px;background:var(--ra-surface-raised);transition:background .12s,border-color .12s}.research-agent button:hover:not(:disabled){border-color:color-mix(in srgb,var(--ra-accent) 72%,var(--ra-border));background:color-mix(in srgb,var(--ra-accent) 14%,var(--ra-surface-raised))}.research-agent-primary{border-color:#4c8fe8!important;background:#4c8fe8!important;color:#fff!important}
+      .research-agent-session-drawer,.research-agent-rag,.research-agent-context,.research-agent-card{border-color:var(--ra-border);border-radius:9px;background:var(--ra-surface)}
+      .research-agent-session-item{background:transparent}.research-agent-session-item.is-active{border-color:rgba(120,168,255,.65);background:var(--ra-accent-weak)}
+      .research-agent-rag select,.research-agent-entry-list{border-color:var(--ra-border);background:var(--ra-surface-raised)}
+      .research-agent-log{padding:8px;border:0;border-radius:9px;background:var(--ra-surface);box-shadow:none}.research-agent-message{margin-bottom:9px;padding:10px;border:1px solid transparent;border-radius:8px;background:transparent}.research-agent-message.is-user{border-color:rgba(120,168,255,.22);background:var(--ra-accent-weak)}.research-agent-response{border-color:var(--ra-border);background:var(--ra-surface-raised)}.research-agent-role{font-size:.78em;color:var(--ra-accent)}
+      .research-agent-message-actions{gap:4px;margin-top:8px}.research-agent-message-actions button{min-height:23px;padding:2px 7px;border-color:transparent;background:transparent;color:var(--fill-secondary,#a3a3a3)}.research-agent-message-actions button:hover:not(:disabled){background:rgba(255,255,255,.08);color:inherit}
+      .research-agent-edit-box{box-sizing:border-box;width:100%;min-height:92px;max-height:34vh;padding:9px;resize:vertical;border:1px solid var(--ra-accent);border-radius:7px;background:var(--ra-surface);color:inherit;font:menu;line-height:1.45}.research-agent-edit-box:focus{outline:2px solid color-mix(in srgb,var(--ra-accent) 45%,transparent);outline-offset:1px}.research-agent-edit-actions{justify-content:flex-end;margin-top:8px}
+      .research-agent-trace{border-color:var(--ra-border);background:rgba(255,255,255,.025)}.research-agent-trace-reasoning,.research-agent-tool-event{border-radius:6px;background:rgba(255,255,255,.055);color:var(--fill-secondary,#b7b7b7)}
+      .research-agent-citation{border-radius:6px;background:rgba(120,168,255,.14);color:var(--ra-accent)}
+      .research-agent textarea{min-height:100px;padding:11px;border-color:var(--ra-border);border-radius:9px;background:var(--ra-surface);box-shadow:inset 0 1px rgba(255,255,255,.025)}
     `;
     body.append(style);
     const root = doc.createElement("div"); root.className = "research-agent";
@@ -158,9 +175,9 @@ var ResearchAgentSidebar = {
         const item = this.addMessage(doc, log, message.role === "user" ? "你" : "助手", message.content, message.role === "user", message.role === "assistant" ? message.citations : null);
         const actions = doc.createElement("div"); actions.className = "research-agent-message-actions";
         if (message.role === "user") {
-          actions.append(this.button(doc, "编辑", () => editMessage(message)), this.button(doc, "撤回", () => retractMessage(message)));
+          actions.append(this.button(doc, "编辑", () => editMessage(message, item)), this.button(doc, "撤回", () => retractMessage(message)));
         } else {
-          actions.append(this.button(doc, "编辑", () => editMessage(message)), this.button(doc, "撤回此轮", () => retractAssistantTurn(message)));
+          actions.append(this.button(doc, "编辑", () => editMessage(message, item)), this.button(doc, "撤回此轮", () => retractAssistantTurn(message)));
         }
         item.append(actions);
       }
@@ -186,10 +203,39 @@ var ResearchAgentSidebar = {
       if (!item) { status.textContent = "请先在左侧文献列表选中一篇论文。"; return; }
       state.active.paper = ResearchAgentStorage.paperFromItem(item); await ResearchAgentStorage.saveConversation(state.active); state.summaries = await ResearchAgentStorage.listConversations(); renderSessions(); renderConversation(); status.textContent = "已关联当前文献。";
     };
-    const editMessage = async (message) => {
-      const content = doc.defaultView.prompt("编辑消息。编辑后将撤回该消息之后的回答。", message.content);
-      if (content === null || !content.trim()) return;
-      await ResearchAgentStorage.editAndRetractAfter(state.active, message.id, content); state.summaries = await ResearchAgentStorage.listConversations(); renderSessions(); renderConversation(); status.textContent = "消息已编辑，后续回答已撤回。";
+    const saveEditedMessage = async (message, content, resend) => {
+      const revised = content.trim();
+      if (!revised) { status.textContent = "消息不能为空。"; return; }
+      await ResearchAgentStorage.editAndRetractAfter(state.active, message.id, revised);
+      state.summaries = await ResearchAgentStorage.listConversations();
+      renderSessions();
+      renderConversation();
+      if (resend && message.role === "user") {
+        status.textContent = "已保存修改，正在重新发送…";
+        await ask({ question: revised, existingMessage: true });
+      } else {
+        status.textContent = "修改已保存，后续消息已撤回。";
+      }
+    };
+    const editMessage = (message, item) => {
+      if (send.disabled) { status.textContent = "请等待当前回答结束后再编辑。"; return; }
+      const content = item.querySelector(".research-agent-message-content");
+      const actions = item.querySelector(".research-agent-message-actions");
+      if (!content || !actions || item.classList.contains("is-editing")) return;
+      item.classList.add("is-editing");
+      const editor = doc.createElement("textarea"); editor.className = "research-agent-edit-box"; editor.value = message.content;
+      editor.setAttribute("aria-label", "编辑消息内容");
+      content.replaceWith(editor);
+      const cancel = this.button(doc, "取消", () => renderConversation());
+      const save = this.button(doc, "保存修改", () => saveEditedMessage(message, editor.value, false).catch((error) => { Zotero.logError(error); status.textContent = `错误：${error.message}`; }));
+      actions.classList.add("research-agent-edit-actions");
+      actions.replaceChildren(cancel, save);
+      if (message.role === "user") {
+        const resend = this.button(doc, "保存并重新发送", () => saveEditedMessage(message, editor.value, true).catch((error) => { Zotero.logError(error); status.textContent = `错误：${error.message}`; }));
+        resend.classList.add("research-agent-primary");
+        actions.append(resend);
+      }
+      editor.focus(); editor.setSelectionRange(editor.value.length, editor.value.length);
     };
     const retractMessage = async (message) => {
       if (!doc.defaultView.confirm("撤回这条消息及其后的内容？")) return;
@@ -200,8 +246,8 @@ var ResearchAgentSidebar = {
       const user = [...state.active.messages.slice(0, index)].reverse().find((entry) => entry.role === "user");
       if (user) await retractMessage(user);
     };
-    const ask = async () => {
-      const question = input.value.trim();
+    const ask = async ({ question: suppliedQuestion, existingMessage = false } = {}) => {
+      const question = String(suppliedQuestion ?? input.value).trim();
       if (!question || send.disabled || !state.active) return;
       let ragConfig;
       if (ragToggle.checked) {
@@ -209,21 +255,23 @@ var ResearchAgentSidebar = {
         if (!selectedBase) { status.textContent = "启用 RAG 后，请先选择一个具体知识库。"; return; }
         ragConfig = { enabled: true, collectionIDs: [selectedBase.id], knowledgeBaseTitle: selectedBase.title, useSemantic: false };
       } else {
-        const paper = currentItem();
+        const paper = currentItem() || (state.active.paper?.itemID ? Zotero.Items.get(state.active.paper.itemID) : null);
         if (!paper) { status.textContent = "未启用 RAG 时，请先在左侧选择一篇论文。"; return; }
         try { ragConfig = { enabled: false, paperContext: await ResearchAgentIndexer.paperContext(paper) }; }
         catch (error) { status.textContent = `无法读取当前论文：${error.message}`; return; }
       }
-      await ResearchAgentStorage.appendMessage(state.active, "user", question);
-      state.summaries = await ResearchAgentStorage.listConversations(); renderSessions();
-      this.addMessage(doc, log, "你", question, true);
+      if (!existingMessage) {
+        await ResearchAgentStorage.appendMessage(state.active, "user", question);
+        state.summaries = await ResearchAgentStorage.listConversations(); renderSessions();
+        this.addMessage(doc, log, "你", question, true);
+      }
       input.value = ""; resizeInput(); updateRemaining(); send.disabled = true; status.textContent = "正在检索、整理记忆并生成回答…";
       const responseView = this.createResponseView(doc, log);
       try {
         const result = await ResearchAgentAgent.answer(question, { conversation: state.active, rag: ragConfig, onEvent: (event) => responseView.handle(event) });
         responseView.finish(result);
         await ResearchAgentStorage.appendMessage(state.active, "assistant", result.answer, { citations: result.citations, trace: responseView.trace() });
-        state.summaries = await ResearchAgentStorage.listConversations(); renderSessions(); updateRemaining(); status.textContent = "回答完成，已保存到本地会话文件。";
+        state.summaries = await ResearchAgentStorage.listConversations(); renderSessions(); renderConversation(); updateRemaining(); status.textContent = "回答完成，已保存到本地会话文件。";
       } catch (error) { Zotero.logError(error); responseView.fail(error); status.textContent = `错误：${error.message}`; }
       finally { send.disabled = false; input.focus(); }
     };
