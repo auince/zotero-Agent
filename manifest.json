@@ -1,12 +1,13 @@
 {
   "manifest_version": 2,
   "name": "Research Agent for Zotero",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Local collection knowledge base and DeepSeek research agent for Zotero.",
   "author": "Local prototype",
   "applications": {
     "zotero": {
       "id": "research-agent@zotero.example.com",
+      "update_url": "https://example.com/zotero-research-agent/updates.json",
       "strict_min_version": "7.9.9",
       "strict_max_version": "10.9.9"
     }

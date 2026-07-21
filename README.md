@@ -14,7 +14,7 @@ A Zotero 9 plugin MVP that turns the currently selected collection into a local,
 
 ## Install the prototype
 
-1. Use the included `research-agent-0.1.3.xpi` (or create it with the packaging command below).
+1. Use the included `research-agent-0.1.4.xpi` (or create it with the packaging command below).
 2. Zotero → **Tools → Add-ons** → gear icon → **Install Add-on From File…**.
 3. Restart Zotero and open **Tools → Research Agent**.
 4. Go to Zotero **Settings → Research Agent** and set both your DeepSeek and SiliconFlow API keys. GitHub and Brave Search keys are optional.
@@ -35,8 +35,8 @@ A Zotero 9 plugin MVP that turns the currently selected collection into a local,
 ```sh
 node --check bootstrap.js
 for file in src/*.js chrome/content/chat.js; do node --check "$file"; done
-zip -X -r research-agent-0.1.3.xpi manifest.json bootstrap.js prefs.js prefs.xhtml chrome src LICENSE README.md
-unzip -t research-agent-0.1.3.xpi
+zip -X -r research-agent-0.1.4.xpi manifest.json bootstrap.js prefs.js prefs.xhtml chrome src LICENSE README.md
+unzip -t research-agent-0.1.4.xpi
 ```
 
 ## Deliberate MVP limits
@@ -59,4 +59,4 @@ git push -u origin main
 
 ## Zotero compatibility
 
-The manifest declares Zotero 7.9.9–10.9.9, matching the compatibility declaration used by the locally installed Zotero 9 translation plugin. It follows Zotero's current bootstrapped-plugin structure: WebExtension-style `manifest.json`, `bootstrap.js`, lifecycle hooks, main-window hooks, and runtime chrome registration.
+The manifest declares Zotero 7.9.9–10.9.9, matching the compatibility declaration used by the locally installed Zotero 9 translation plugin. Zotero 9 also requires an `update_url`; this prototype uses an inert placeholder until the GitHub Release update manifest is published. It follows Zotero's current bootstrapped-plugin structure: WebExtension-style `manifest.json`, `bootstrap.js`, lifecycle hooks, main-window hooks, and runtime chrome registration.
