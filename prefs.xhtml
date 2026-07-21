@@ -1,0 +1,18 @@
+<vbox xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+      xmlns:html="http://www.w3.org/1999/xhtml">
+  <groupbox>
+    <label><html:h2>Research Agent</html:h2></label>
+    <description>API keys are stored in this Zotero profile and are never included in exports or Git commits.</description>
+    <html:label>DeepSeek API key</html:label>
+    <html:input type="password" preference="extensions.researchAgent.deepseekAPIKey" style="width: 34em"/>
+    <html:label>DeepSeek API base URL</html:label>
+    <html:input type="url" preference="extensions.researchAgent.deepseekBaseURL" style="width: 34em"/>
+    <html:label>DeepSeek model</html:label>
+    <html:input type="text" preference="extensions.researchAgent.deepseekModel" style="width: 22em"/>
+    <html:label>GitHub token (optional; improves source-code search limits)</html:label>
+    <html:input type="password" preference="extensions.researchAgent.githubToken" style="width: 34em"/>
+    <html:label>Brave Search API key (optional; otherwise DuckDuckGo HTML fallback is used)</html:label>
+    <html:input type="password" preference="extensions.researchAgent.braveAPIKey" style="width: 34em"/>
+    <checkbox label="Create one concise daily knowledge note" preference="extensions.researchAgent.dailyNotesEnabled"/>
+  </groupbox>
+</vbox>

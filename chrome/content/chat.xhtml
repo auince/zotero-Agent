@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8"/>
+  <title>Research Agent</title>
+  <link rel="stylesheet" href="chat.css"/>
+  <script src="chat.js"></script>
+</head>
+<body>
+  <header>
+    <strong>Research Agent</strong>
+    <span id="status">Ready. Index a collection before asking library questions.</span>
+  </header>
+  <section id="actions">
+    <button id="index-current">Index selected collection</button>
+    <button id="daily-note">Update daily note</button>
+    <button id="open-vault">Open local vault</button>
+  </section>
+  <main id="conversation" aria-live="polite"></main>
+  <form id="question-form">
+    <textarea id="question" rows="4" placeholder="Ask about this collection, or ask the agent to search the web, arXiv, or GitHub source code."></textarea>
+    <button type="submit">Ask</button>
+  </form>
+</body>
+</html>
