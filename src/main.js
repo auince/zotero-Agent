@@ -58,6 +58,6 @@ var ResearchAgent = {
   },
 
   openChat(window) {
-    window.openDialog("chrome://research-agent/content/chat.xhtml", "research-agent-chat", "chrome,resizable,centerscreen");
+    window.openDialog("chrome://research-agent/content/chat.xhtml", "research-agent-chat", "chrome,dialog=no,resizable,centerscreen");
   }
 };
