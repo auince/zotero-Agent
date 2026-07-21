@@ -3,9 +3,11 @@
 var ResearchAgentAgent = {
   systemPrompt: `You are a Zotero research agent. Use search_knowledge_base before making claims about the user's library. Use search_web for current external facts, search_arxiv for scholarly preprints, and search_github_code for implementation questions. Cite Zotero evidence as [item key] and external sources as Markdown links. Be concise, distinguish evidence from inference, and do not invent sources.`,
 
-  async answer(question, { onEvent, conversation } = {}) {
+  async answer(question, { onEvent, conversation, rag } = {}) {
     const apiKey = Zotero.Prefs.get("extensions.researchAgent.deepseekAPIKey");
     if (!apiKey) throw new Error("请先在 Zotero 设置 → Research Agent 中填写 DeepSeek API Key。");
+    const ragEnabled = rag ? Boolean(rag.enabled) : true;
+    const tools = ResearchAgentTools.definitionsFor({ ragEnabled });
     let messages = [
       { role: "system", content: this.systemPrompt },
       { role: "user", content: question }
@@ -14,9 +16,15 @@ var ResearchAgentAgent = {
       const memoryMessages = await ResearchAgentMemory.prepare(conversation, question, apiKey, onEvent);
       messages = [{ role: "system", content: this.systemPrompt }, ...memoryMessages];
     }
+    if (ragEnabled) {
+      messages.splice(1, 0, { role: "system", content: `知识库检索已启用。只能检索用户选择的知识库（${rag?.knowledgeBaseTitle || "当前选择"}），不得把未选择的本地文献作为证据。` });
+    } else {
+      if (!rag?.paperContext) throw new Error("未启用 RAG 时，请先在左侧选择一篇论文。 ");
+      messages.splice(1, 0, { role: "system", content: `知识库与网络工具均已关闭。只分析下面这篇当前论文，不能引用或推断其外部内容：\n\n${rag.paperContext}` });
+    }
     const citations = [];
     for (let step = 0; step < 8; step++) {
-      const message = await this.completeStream(messages, apiKey, onEvent);
+      const message = await this.completeStream(messages, apiKey, onEvent, tools);
       if (!message.tool_calls?.length) {
         const answer = message.content || "模型没有返回正文。";
         const result = { answer, citations: this.uniqueCitations(citations) };
@@ -29,7 +37,7 @@ var ResearchAgentAgent = {
         this.emit(onEvent, { type: "tool-start", name: call.function.name, args });
         let result;
         try {
-          result = await ResearchAgentTools.execute(call.function.name, args);
+          result = await ResearchAgentTools.execute(call.function.name, args, { collectionIDs: rag?.collectionIDs || [] });
           const found = this.extractCitations(call.function.name, result);
           citations.push(...found);
           this.emit(onEvent, { type: "tool-finish", name: call.function.name, args, count: Array.isArray(result) ? result.length : 0, citations: found });
@@ -43,7 +51,7 @@ var ResearchAgentAgent = {
     throw new Error("助手在八个工具步骤后停止。请缩小问题范围后重试。");
   },
 
-  async completeStream(messages, apiKey, onEvent) {
+  async completeStream(messages, apiKey, onEvent, tools) {
     const baseURL = (Zotero.Prefs.get("extensions.researchAgent.deepseekBaseURL") || "https://api.deepseek.com").replace(/\/$/, "");
     const model = Zotero.Prefs.get("extensions.researchAgent.deepseekModel") || "deepseek-chat";
     const state = { content: "", reasoning: "", toolCalls: [] };
@@ -80,9 +88,11 @@ var ResearchAgentAgent = {
       buffer = final ? "" : blocks.pop();
       for (const block of blocks) readEvent(block);
     };
+    const payload = { model, messages, temperature: 0.2, stream: true };
+    if (tools?.length) { payload.tools = tools; payload.tool_choice = "auto"; }
     const xhr = await Zotero.HTTP.request("POST", `${baseURL}/chat/completions`, {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model, messages, tools: ResearchAgentTools.definitions, tool_choice: "auto", temperature: 0.2, stream: true }),
+      body: JSON.stringify(payload),
       responseType: "text",
       timeout: 0,
       requestObserver: (request) => {

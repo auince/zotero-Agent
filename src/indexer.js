@@ -76,6 +76,31 @@ var ResearchAgentIndexer = {
       .sort((a, b) => a.title.localeCompare(b.title));
   },
 
+  async listKnowledgeBases() {
+    const index = await ResearchAgentStorage.getIndex();
+    const groups = new Map();
+    for (const article of Object.values(index.articles)) {
+      const id = article.collectionID == null ? "unfiled" : String(article.collectionID);
+      const current = groups.get(id) || { id, title: article.collectionID == null ? "未分类文献" : article.collectionPath.join(" / "), articleCount: 0 };
+      current.articleCount++;
+      groups.set(id, current);
+    }
+    return [...groups.values()].sort((a, b) => a.title.localeCompare(b.title));
+  },
+
+  async paperContext(item, maxChars = 60000) {
+    if (!item?.isRegularItem?.()) throw new Error("请先在左侧选择一篇常规文献。");
+    const article = await this.articleRecord(item, { id: null }, ["当前论文"]);
+    const metadata = [
+      `标题：${article.title}`,
+      article.creators.length ? `作者：${article.creators.join(", ")}` : "",
+      article.date ? `日期：${article.date}` : "",
+      article.abstract ? `摘要：${article.abstract}` : ""
+    ].filter(Boolean).join("\n");
+    const text = article.text ? `\n\n正文（可能已截断）：\n${article.text.slice(0, maxChars)}` : "";
+    return `${metadata}${text}`;
+  },
+
   async removeEntries(keys) {
     const index = await ResearchAgentStorage.getIndex();
     for (const key of keys) delete index.articles[key];
@@ -190,15 +215,17 @@ var ResearchAgentIndexer = {
     }
   },
 
-  async search(query, limit = 8) {
+  async search(query, limit = 8, collectionIDs = []) {
     const index = await ResearchAgentStorage.getIndex();
     const terms = this.tokens(query);
-    const semanticReady = Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey")) && index.chunks.some((chunk) => chunk.embedding);
+    const selected = new Set(collectionIDs.map(String));
+    const scopedChunks = selected.size ? index.chunks.filter((chunk) => selected.has(chunk.collectionID == null ? "unfiled" : String(chunk.collectionID))) : index.chunks;
+    const semanticReady = Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey")) && scopedChunks.some((chunk) => chunk.embedding);
     let queryEmbedding = null;
     if (semanticReady) {
       try { [queryEmbedding] = await ResearchAgentSemantic.embed([query]); } catch (error) { Zotero.logError(error); }
     }
-    const scored = index.chunks.map((chunk) => {
+    const scored = scopedChunks.map((chunk) => {
       const lexicalScore = this.score(chunk, terms);
       const semanticScore = queryEmbedding ? ResearchAgentSemantic.cosine(queryEmbedding, chunk.embedding) : 0;
       const lexicalWeight = terms.length ? Math.min(1, lexicalScore / (terms.length * 2)) : 0;

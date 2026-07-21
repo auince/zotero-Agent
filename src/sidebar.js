@@ -35,8 +35,9 @@ var ResearchAgentSidebar = {
       .research-agent-tab { flex:1; min-height:30px; border:0; border-radius:7px; background:transparent; color:inherit; font:menu; font-weight:650; cursor:pointer; }
       .research-agent-tab:hover { background:color-mix(in srgb,var(--ra-accent) 10%,transparent); }.research-agent-tab.is-active{background:var(--ra-accent);color:#fff;box-shadow:0 1px 4px color-mix(in srgb,var(--ra-accent) 35%,transparent)}
       .research-agent-status { padding:7px 9px; border-radius:8px; background:var(--ra-accent-weak); color:color-mix(in srgb,var(--ra-accent) 78%,currentColor); font-size:.9em; line-height:1.35; }.research-agent-panel{display:none;min-height:0}.research-agent-panel.is-active{display:flex;flex:1;flex-direction:column;gap:10px}
-      .research-agent-sessionbar { display:flex; align-items:center; gap:6px; }.research-agent-session-title { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; }.research-agent button { min-height:29px; padding:5px 9px; border:1px solid var(--ra-border); border-radius:7px; background:var(--material-sidepane,#fff); color:inherit; font:menu; cursor:pointer; }.research-agent button:hover:not(:disabled){border-color:var(--ra-accent);background:var(--ra-accent-weak)}.research-agent button:disabled{cursor:wait;opacity:.65}.research-agent-primary{border-color:var(--ra-accent)!important;background:var(--ra-accent)!important;color:#fff!important;font-weight:650!important}
-      .research-agent-session-drawer { display:none; flex-direction:column; gap:8px; padding:10px; border:1px solid var(--ra-border); border-radius:10px; background:color-mix(in srgb,var(--ra-accent) 4%,transparent); }.research-agent-session-drawer.is-open{display:flex}.research-agent-session-list{width:100%;min-height:118px;box-sizing:border-box;border:1px solid var(--ra-border);border-radius:7px;background:var(--material-sidepane,#fff);color:inherit;font:menu}.research-agent-session-list option{padding:5px}.research-agent-session-actions{display:flex;flex-wrap:wrap;gap:6px}.research-agent-session-toggle{display:flex;align-items:center;gap:6px;color:var(--fill-secondary,#687583);font-size:.88em}
+      .research-agent-sessionbar { display:flex; align-items:center; gap:6px; }.research-agent-session-title { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; }.research-agent button { min-height:29px; padding:5px 9px; border:1px solid var(--ra-border); border-radius:7px; background:var(--material-sidepane,#fff); color:inherit; font:menu; cursor:pointer; }.research-agent button:hover:not(:disabled){border-color:var(--ra-accent);background:var(--ra-accent-weak)}.research-agent button:disabled{cursor:wait;opacity:.65}.research-agent-primary{border-color:var(--ra-accent)!important;background:var(--ra-accent)!important;color:#fff!important;font-weight:650!important}.research-agent-session-button{flex:0 0 auto}
+      .research-agent-session-drawer { display:none; flex-direction:column; gap:8px; padding:10px; border:1px solid var(--ra-border); border-radius:10px; background:color-mix(in srgb,var(--ra-accent) 4%,transparent); }.research-agent-session-drawer.is-open{display:flex}.research-agent-session-list{display:flex;flex-direction:column;gap:5px;max-height:230px;overflow:auto}.research-agent-session-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left}.research-agent-session-item.is-active{border-color:var(--ra-accent);background:var(--ra-accent-weak)}.research-agent-session-item small{color:var(--fill-secondary,#687583)}.research-agent-session-actions{display:flex;flex-wrap:wrap;gap:6px}.research-agent-session-toggle{display:flex;align-items:center;gap:6px;color:var(--fill-secondary,#687583);font-size:.88em}
+      .research-agent-rag { display:flex; flex-wrap:wrap; align-items:center; gap:7px; padding:8px 10px; border:1px solid var(--ra-border); border-radius:10px; background:color-mix(in srgb,var(--ra-accent) 3%,transparent); }.research-agent-rag label{display:flex;align-items:center;gap:5px;font-weight:650}.research-agent-rag select{flex:1;min-width:150px;box-sizing:border-box;min-height:28px;border:1px solid var(--ra-border);border-radius:6px;background:var(--material-sidepane,#fff);color:inherit;font:menu}.research-agent-rag select:disabled{opacity:.55}.research-agent-rag-note{width:100%;color:var(--fill-secondary,#687583);font-size:.82em}
       .research-agent-context{padding:9px 10px;border:1px solid var(--ra-border);border-radius:10px;background:color-mix(in srgb,var(--ra-accent) 4%,transparent)}.research-agent-context-label{display:block;margin-bottom:3px;color:var(--fill-secondary,#687583);font-size:.82em;font-weight:600}.research-agent-selected-item{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-weight:650;line-height:1.35}
       .research-agent-log{flex:1;min-height:200px;overflow:auto;padding:12px;border:1px solid var(--ra-border);border-radius:11px;background:var(--material-sidepane,#fff);box-shadow:inset 0 1px 0 color-mix(in srgb,currentColor 4%,transparent);line-height:1.48}.research-agent-message{margin:0 0 12px;padding:8px 10px;border-radius:9px;background:color-mix(in srgb,currentColor 4%,transparent)}.research-agent-message:last-child{margin-bottom:0}.research-agent-message.is-user{background:var(--ra-accent-weak)}.research-agent-role{display:block;margin-bottom:3px;color:var(--ra-accent);font-size:.84em;font-weight:700}.research-agent-message-content{white-space:pre-wrap}.research-agent-message-actions{display:flex;justify-content:flex-end;gap:5px;margin-top:7px}.research-agent-message-actions button{min-height:24px;padding:2px 6px;font-size:.8em}
       .research-agent-response{background:var(--material-sidepane,#fff);border:1px solid color-mix(in srgb,var(--ra-accent) 18%,var(--ra-border))}.research-agent-answer{min-height:1.4em;white-space:pre-wrap}.research-agent-trace{margin-top:9px;border:1px solid color-mix(in srgb,currentColor 10%,transparent);border-radius:8px;background:color-mix(in srgb,currentColor 2.5%,transparent)}.research-agent-trace summary{padding:7px 9px;color:var(--fill-secondary,#687583);cursor:pointer;font-size:.86em;font-weight:600}.research-agent-trace-body{display:flex;flex-direction:column;gap:5px;padding:0 8px 8px}.research-agent-trace-reasoning{padding:7px 8px;border-radius:6px;background:color-mix(in srgb,currentColor 3.5%,transparent);color:var(--fill-secondary,#687583);font-size:.88em;line-height:1.42;white-space:pre-wrap}.research-agent-tool-event{padding:6px 8px;border-radius:6px;background:#f1f3f5;color:#69727d;font-size:.84em;line-height:1.38}@media(prefers-color-scheme:dark){.research-agent-tool-event{background:#262b31;color:#b8c0ca}}
@@ -50,22 +51,28 @@ var ResearchAgentSidebar = {
     const tabs = doc.createElement("div"); tabs.className = "research-agent-top";
     const chatPanel = doc.createElement("section"); chatPanel.className = "research-agent-panel is-active";
     const knowledgePanel = doc.createElement("section"); knowledgePanel.className = "research-agent-panel";
+    const sessionTab = this.button(doc, "会话", () => drawer.classList.toggle("is-open")); sessionTab.classList.add("research-agent-session-button");
     const chatTab = this.button(doc, "✦ 聊天", () => activate("chat")); chatTab.classList.add("research-agent-tab", "is-active");
-    const knowledgeTab = this.button(doc, "▦ 知识库", () => activate("knowledge")); knowledgeTab.classList.add("research-agent-tab"); tabs.append(chatTab, knowledgeTab);
+    const knowledgeTab = this.button(doc, "▦ 知识库", () => activate("knowledge")); knowledgeTab.classList.add("research-agent-tab"); tabs.append(sessionTab, chatTab, knowledgeTab);
     const activate = (page) => { const chat = page === "chat"; chatPanel.classList.toggle("is-active", chat); knowledgePanel.classList.toggle("is-active", !chat); chatTab.classList.toggle("is-active", chat); knowledgeTab.classList.toggle("is-active", !chat); if (!chat) refreshEntries().catch((error) => { Zotero.logError(error); status.textContent = `错误：${error.message}`; }); };
 
-    const state = { active: null, summaries: [] };
+    const state = { active: null, summaries: [], knowledgeBases: [] };
     const sessionBar = doc.createElement("div"); sessionBar.className = "research-agent-sessionbar";
-    const showSessions = this.button(doc, "会话", () => drawer.classList.toggle("is-open"));
     const sessionTitle = doc.createElement("div"); sessionTitle.className = "research-agent-session-title";
-    const newSession = this.button(doc, "新对话", () => createSession()); newSession.classList.add("research-agent-primary"); sessionBar.append(showSessions, sessionTitle, newSession);
+    const newSession = this.button(doc, "新对话", () => createSession()); newSession.classList.add("research-agent-primary"); sessionBar.append(sessionTitle, newSession);
     const drawer = doc.createElement("div"); drawer.className = "research-agent-session-drawer";
-    const sessionList = doc.createElement("select"); sessionList.className = "research-agent-session-list"; sessionList.size = 7;
+    const sessionList = doc.createElement("div"); sessionList.className = "research-agent-session-list";
     const syncToggle = doc.createElement("input"); syncToggle.type = "checkbox"; syncToggle.checked = Boolean(Zotero.Prefs.get("extensions.researchAgent.syncItemOnConversationSwitch"));
     const syncLabel = doc.createElement("label"); syncLabel.className = "research-agent-session-toggle"; syncLabel.append(syncToggle, doc.createTextNode("切换会话时联动左侧文献"));
     syncToggle.addEventListener("change", () => Zotero.Prefs.set("extensions.researchAgent.syncItemOnConversationSwitch", syncToggle.checked));
     const bindPaper = this.button(doc, "关联当前文献", () => bindCurrentPaper());
     drawer.append(sessionList, bindPaper, syncLabel);
+    const rag = doc.createElement("div"); rag.className = "research-agent-rag";
+    const ragToggle = doc.createElement("input"); ragToggle.type = "checkbox";
+    const ragLabel = doc.createElement("label"); ragLabel.append(ragToggle, doc.createTextNode("启用知识库检索（RAG）"));
+    const ragSelect = doc.createElement("select"); ragSelect.disabled = true;
+    const ragNote = doc.createElement("span"); ragNote.className = "research-agent-rag-note"; ragNote.textContent = "未启用 RAG：仅分析当前左侧论文，不连接知识库或网络工具。";
+    rag.append(ragLabel, ragSelect, ragNote);
     const context = doc.createElement("div"); context.className = "research-agent-context";
     const contextLabel = doc.createElement("span"); contextLabel.className = "research-agent-context-label"; contextLabel.textContent = "本会话关联文献";
     const selected = doc.createElement("div"); selected.className = "research-agent-selected-item"; context.append(contextLabel, selected);
@@ -76,26 +83,48 @@ var ResearchAgentSidebar = {
     const send = this.button(doc, "发送", () => ask()); send.classList.add("research-agent-primary");
     const sendLine = doc.createElement("div"); sendLine.className = "research-agent-sendline";
     const hint = doc.createElement("span"); hint.className = "research-agent-hint"; hint.textContent = "⌘ / Ctrl + Enter 发送"; sendLine.append(hint, remaining, send);
-    composer.append(input, sendLine); chatPanel.append(sessionBar, drawer, context, log, composer);
+    composer.append(input, sendLine); chatPanel.append(sessionBar, drawer, rag, context, log, composer);
     const resizeInput = () => { input.style.height = "auto"; input.style.height = `${Math.min(Math.max(input.scrollHeight, 108), Math.max(150, doc.defaultView.innerHeight * .34))}px`; };
     const updateRemaining = () => {
-      const left = state.active ? ResearchAgentMemory.remaining(state.active, input.value) : ResearchAgentMemory.limit();
-      remaining.textContent = `上下文余量 ≈ ${this.formatTokens(left)}`;
+      const limit = ResearchAgentMemory.limit();
+      const left = state.active ? ResearchAgentMemory.remaining(state.active, input.value) : limit;
+      const used = Math.max(0, limit - left);
+      remaining.textContent = `${this.formatTokens(used)}/${this.formatTokens(limit)}`;
       remaining.classList.toggle("warning", left >= 0 && left < ResearchAgentMemory.limit() * .1);
       remaining.classList.toggle("over", left < 0);
     };
     input.addEventListener("input", () => { resizeInput(); updateRemaining(); });
     input.addEventListener("keydown", (event) => { if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) { event.preventDefault(); ask(); } });
-    sessionList.addEventListener("change", () => loadSession(sessionList.value));
 
     const currentItem = () => {
       const item = Zotero.getActiveZoteroPane()?.getSelectedItems()?.[0];
       return item?.isRegularItem?.() ? item : item?.parentItem;
     };
+    const refreshRagBases = async () => {
+      const previous = ragSelect.value;
+      state.knowledgeBases = await ResearchAgentIndexer.listKnowledgeBases();
+      ragSelect.replaceChildren();
+      const placeholder = doc.createElement("option"); placeholder.value = ""; placeholder.textContent = state.knowledgeBases.length ? "请选择知识库…" : "没有可用的已嵌入知识库"; ragSelect.append(placeholder);
+      for (const base of state.knowledgeBases) { const option = doc.createElement("option"); option.value = base.id; option.textContent = `${base.title}（${base.articleCount} 篇）`; ragSelect.append(option); }
+      if (state.knowledgeBases.some((base) => base.id === previous)) ragSelect.value = previous;
+    };
+    ragToggle.addEventListener("change", () => {
+      ragSelect.disabled = !ragToggle.checked;
+      if (ragToggle.checked) {
+        ragNote.textContent = "请选择一个已嵌入的知识库；检索仅在该范围内进行。";
+        refreshRagBases().catch((error) => { Zotero.logError(error); status.textContent = `无法读取知识库：${error.message}`; });
+      } else {
+        ragNote.textContent = "未启用 RAG：仅分析当前左侧论文，不连接知识库或网络工具。";
+      }
+    });
     const renderSessions = () => {
       sessionList.replaceChildren();
-      for (const summary of state.summaries) { const option = doc.createElement("option"); option.value = summary.id; option.textContent = `${summary.title} · ${this.shortDate(summary.updatedAt)}`; sessionList.append(option); }
-      if (state.active) sessionList.value = state.active.id;
+      for (const summary of state.summaries) {
+        const entry = this.button(doc, summary.title, () => loadSession(summary.id));
+        entry.classList.add("research-agent-session-item"); entry.classList.toggle("is-active", summary.id === state.active?.id);
+        const meta = doc.createElement("small"); meta.textContent = `${summary.paper?.title || "未关联文献"} · ${this.shortDate(summary.updatedAt)}`;
+        entry.append(meta); sessionList.append(entry);
+      }
     };
     const renderCitations = (target, citations) => {
       if (!citations?.length) return;
@@ -160,13 +189,24 @@ var ResearchAgentSidebar = {
     const ask = async () => {
       const question = input.value.trim();
       if (!question || send.disabled || !state.active) return;
+      let ragConfig;
+      if (ragToggle.checked) {
+        const selectedBase = state.knowledgeBases.find((base) => base.id === ragSelect.value);
+        if (!selectedBase) { status.textContent = "启用 RAG 后，请先选择一个具体知识库。"; return; }
+        ragConfig = { enabled: true, collectionIDs: [selectedBase.id], knowledgeBaseTitle: selectedBase.title };
+      } else {
+        const paper = currentItem();
+        if (!paper) { status.textContent = "未启用 RAG 时，请先在左侧选择一篇论文。"; return; }
+        try { ragConfig = { enabled: false, paperContext: await ResearchAgentIndexer.paperContext(paper) }; }
+        catch (error) { status.textContent = `无法读取当前论文：${error.message}`; return; }
+      }
       await ResearchAgentStorage.appendMessage(state.active, "user", question);
       state.summaries = await ResearchAgentStorage.listConversations(); renderSessions();
       this.addMessage(doc, log, "你", question, true);
       input.value = ""; resizeInput(); updateRemaining(); send.disabled = true; status.textContent = "正在检索、整理记忆并生成回答…";
       const responseView = this.createResponseView(doc, log);
       try {
-        const result = await ResearchAgentAgent.answer(question, { conversation: state.active, onEvent: (event) => responseView.handle(event) });
+        const result = await ResearchAgentAgent.answer(question, { conversation: state.active, rag: ragConfig, onEvent: (event) => responseView.handle(event) });
         responseView.finish(result);
         await ResearchAgentStorage.appendMessage(state.active, "assistant", result.answer, { citations: result.citations, trace: responseView.trace() });
         state.summaries = await ResearchAgentStorage.listConversations(); renderSessions(); updateRemaining(); status.textContent = "回答完成，已保存到本地会话文件。";
@@ -238,6 +278,6 @@ var ResearchAgentSidebar = {
     };
   },
 
-  formatTokens(value) { const sign = value < 0 ? "−" : ""; const number = Math.abs(Math.round(value)); return `${sign}${number >= 1000 ? `${(number / 1000).toFixed(number >= 10000 ? 0 : 1)}K` : number}`; },
+  formatTokens(value) { const number = Math.max(0, Math.round(value)); return `${number >= 1000 ? `${(number / 1000).toFixed(number >= 10000 ? 0 : 1)}` : "0"}k`; },
   shortDate(value) { try { return new Date(value).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" }); } catch (_) { return ""; } }
 };

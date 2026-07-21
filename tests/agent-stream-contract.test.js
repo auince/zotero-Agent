@@ -26,7 +26,7 @@ const context = {
     logError: () => {}
   },
   ResearchAgentStorage: { appendConversation: async () => {} },
-  ResearchAgentTools: { definitions: [], execute: async () => [] },
+  ResearchAgentTools: { definitions: [], definitionsFor: () => [], execute: async () => [] },
   Set, JSON, Error
 };
 vm.createContext(context);

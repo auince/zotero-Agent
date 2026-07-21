@@ -36,9 +36,13 @@ var ResearchAgentTools = {
     }
   ],
 
-  async execute(name, args) {
+  definitionsFor({ ragEnabled = true } = {}) {
+    return ragEnabled ? this.definitions : [];
+  },
+
+  async execute(name, args, scope = {}) {
     switch (name) {
-      case "search_knowledge_base": return ResearchAgentIndexer.search(args.query, args.limit || 8);
+      case "search_knowledge_base": return ResearchAgentIndexer.search(args.query, args.limit || 8, scope.collectionIDs || []);
       case "search_web": return this.searchWeb(args.query, args.limit || 5);
       case "search_arxiv": return this.searchArxiv(args.query, args.limit || 5);
       case "search_github_code": return this.searchGitHubCode(args.query, args.limit || 5);
