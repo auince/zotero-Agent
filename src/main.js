@@ -1,6 +1,6 @@
 /* global Services, Zotero */
 
-for (const module of ["storage", "semantic", "indexer", "tools", "agent", "daily-notes"]) {
+for (const module of ["storage", "jobs", "semantic", "indexer", "tools", "agent", "daily-notes"]) {
   Services.scriptloader.loadSubScript(`${ResearchAgentRootURI}src/${module}.js`);
 }
 
@@ -24,6 +24,7 @@ var ResearchAgent = {
 
   shutdown() {
     clearInterval(this.timer);
+    ResearchAgentJobs.cancel();
     for (const window of this.windows) window.document.getElementById("research-agent-menuitem")?.remove();
     this.windows.clear();
   },
@@ -39,7 +40,13 @@ var ResearchAgent = {
     popup.append(item);
     window.ResearchAgentPlugin = {
       ask: (question) => ResearchAgentAgent.answer(question),
-      indexCurrentCollection: () => ResearchAgentIndexer.indexCurrentCollection(),
+      startIndexCurrentCollection: (onProgress) => ResearchAgentIndexer.startCurrentCollection(onProgress),
+      startIndexSelectedArticles: (onProgress) => ResearchAgentIndexer.startSelectedArticles(onProgress),
+      startIndexAllArticles: (onProgress) => ResearchAgentIndexer.startAllArticles(onProgress),
+      cancelIndexing: () => ResearchAgentJobs.cancel(),
+      listKnowledgeEntries: () => ResearchAgentIndexer.listEntries(),
+      removeKnowledgeEntries: (keys) => ResearchAgentIndexer.removeEntries(keys),
+      reembedKnowledgeEntries: (keys, onProgress) => ResearchAgentIndexer.startReembedEntries(keys, onProgress),
       updateDailyNote: () => ResearchAgentDailyNotes.runNow(),
       openVault: () => ResearchAgentStorage.openVault()
     };

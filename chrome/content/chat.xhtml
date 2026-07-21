@@ -12,11 +12,24 @@
     <strong>Research Agent</strong>
     <span id="status">Ready. Index a collection before asking library questions.</span>
   </header>
-  <section id="actions">
-    <button id="index-current">Index selected collection</button>
-    <button id="daily-note">Update daily note</button>
-    <button id="open-vault">Open local vault</button>
+  <section id="knowledge-base">
+    <h2>Knowledge base</h2>
+    <div id="actions">
+      <button type="button" id="index-current">Index selected collection</button>
+      <button type="button" id="index-selected">Index selected Zotero articles</button>
+      <button type="button" id="index-all">Index all articles in this library</button>
+      <button type="button" id="cancel-index" disabled="disabled">Cancel indexing</button>
+    </div>
+    <div id="progress-row"><progress id="index-progress" value="0" max="1"></progress><span id="index-progress-label">No indexing task running.</span></div>
+    <div id="entry-toolbar">
+      <strong>Indexed entries</strong>
+      <button type="button" id="refresh-entries">Refresh</button>
+      <button type="button" id="reembed-entries">Re-embed selected</button>
+      <button type="button" id="remove-entries">Remove selected</button>
+    </div>
+    <select id="knowledge-entries" multiple="multiple" size="6" aria-label="Knowledge base entries"></select>
   </section>
+  <section id="utility-actions"><button type="button" id="daily-note">Update daily note</button><button type="button" id="open-vault">Open local vault</button></section>
   <main id="conversation" aria-live="polite"></main>
   <form id="question-form">
     <textarea id="question" rows="4" placeholder="Ask about this collection, or ask the agent to search the web, arXiv, or GitHub source code."></textarea>

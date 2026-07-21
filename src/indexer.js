@@ -1,39 +1,87 @@
 /* global OS, PathUtils, Zotero, ZoteroPane */
 
 var ResearchAgentIndexer = {
-  async indexCurrentCollection() {
+  startCurrentCollection(onProgress) {
     const pane = Zotero.getActiveZoteroPane();
     const collection = pane.getSelectedCollection();
     if (!collection) throw new Error("Select a regular Zotero collection first.");
-    const index = await ResearchAgentStorage.getIndex();
     const collectionNodes = [collection, ...collection.getDescendents(false, "collection").map((node) => Zotero.Collections.get(node.id))];
-    const semanticEnabled = Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey"));
-    let indexedArticles = 0;
-    let indexedChunks = 0;
-
+    const targets = [];
     for (const current of collectionNodes) {
       const path = this.collectionPath(current);
-      index.collections[current.id] = { id: current.id, name: current.name, path, parentID: current.parentID || null };
       for (const item of current.getChildItems(false)) {
-        if (!item.isRegularItem()) continue;
-        const article = await this.articleRecord(item, current, path);
-        index.articles[item.key] = article;
-        index.chunks = index.chunks.filter((chunk) => chunk.articleKey !== item.key || chunk.collectionID !== current.id);
-        const chunks = this.chunkArticle(article);
-        if (semanticEnabled) await this.embedChunks(chunks);
-        index.chunks.push(...chunks);
-        indexedArticles++;
-        indexedChunks += chunks.length;
+        if (item.isRegularItem()) targets.push({ item, collection: current, collectionPath: path });
       }
     }
-    index.semantic = {
-      embeddingModel: Zotero.Prefs.get("extensions.researchAgent.embeddingModel") || "BAAI/bge-m3",
-      rerankModel: Zotero.Prefs.get("extensions.researchAgent.rerankModel") || "BAAI/bge-reranker-v2-m3",
-      enabled: semanticEnabled
-    };
+    return this.startTargets(`collection: ${collection.name}`, targets, onProgress);
+  },
+
+  startSelectedArticles(onProgress) {
+    const items = Zotero.getActiveZoteroPane().getSelectedItems()
+      .map((item) => item.isRegularItem() ? item : item.parentItem)
+      .filter((item) => item?.isRegularItem());
+    if (!items.length) throw new Error("Select one or more regular Zotero items first.");
+    return this.startTargets("selected articles", items.map((item) => this.targetForItem(item)), onProgress);
+  },
+
+  async startAllArticles(onProgress) {
+    const libraryID = Zotero.getActiveZoteroPane().getSelectedLibraryID();
+    const items = (await Zotero.Items.getAll(libraryID, true)).filter((item) => item.isRegularItem());
+    return this.startTargets("all library articles", items.map((item) => this.targetForItem(item)), onProgress);
+  },
+
+  async startReembedEntries(keys, onProgress) {
+    const index = await ResearchAgentStorage.getIndex();
+    const items = keys.map((key) => Zotero.Items.get(index.articles[key]?.itemID)).filter(Boolean);
+    if (!items.length) throw new Error("No indexed Zotero items were found for re-embedding.");
+    return this.startTargets("re-embed selected entries", items.map((item) => this.targetForItem(item)), onProgress);
+  },
+
+  startTargets(label, targets, onProgress) {
+    const unique = [...new Map(targets.map((target) => [target.item.key, target])).values()];
+    if (!unique.length) throw new Error("There are no regular items to index.");
+    const indexPromise = ResearchAgentStorage.getIndex().then((index) => {
+      index.semantic = {
+        embeddingModel: Zotero.Prefs.get("extensions.researchAgent.embeddingModel") || "BAAI/bge-m3",
+        rerankModel: Zotero.Prefs.get("extensions.researchAgent.rerankModel") || "BAAI/bge-reranker-v2-m3",
+        enabled: Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey"))
+      };
+      return index;
+    });
+    return ResearchAgentJobs.start(label, unique, async (target) => {
+      const index = await indexPromise;
+      await this.indexTarget(index, target);
+      await ResearchAgentStorage.saveIndex(index);
+    }, onProgress);
+  },
+
+  targetForItem(item) {
+    const collection = Zotero.Collections.get(item.getCollections()[0]);
+    return { item, collection: collection || null, collectionPath: collection ? this.collectionPath(collection) : ["Unfiled"] };
+  },
+
+  async indexTarget(index, { item, collection, collectionPath }) {
+    if (collection) index.collections[collection.id] = { id: collection.id, name: collection.name, path: collectionPath, parentID: collection.parentID || null };
+    const article = await this.articleRecord(item, collection || { id: null }, collectionPath);
+    index.articles[item.key] = article;
+    index.chunks = index.chunks.filter((chunk) => chunk.articleKey !== item.key);
+    const chunks = this.chunkArticle(article);
+    if (index.semantic.enabled) await this.embedChunks(chunks);
+    index.chunks.push(...chunks);
+  },
+
+  async listEntries() {
+    const index = await ResearchAgentStorage.getIndex();
+    return Object.values(index.articles).map((article) => ({ key: article.key, title: article.title, collectionPath: article.collectionPath, indexedAt: article.indexedAt }))
+      .sort((a, b) => a.title.localeCompare(b.title));
+  },
+
+  async removeEntries(keys) {
+    const index = await ResearchAgentStorage.getIndex();
+    for (const key of keys) delete index.articles[key];
+    index.chunks = index.chunks.filter((chunk) => !keys.includes(chunk.articleKey));
     await ResearchAgentStorage.saveIndex(index);
-    const mode = semanticEnabled ? "SiliconFlow embeddings generated; retrieval will rerank candidates." : "Lexical-only mode: add a SiliconFlow API key and reindex to enable embeddings and reranking.";
-    return `Indexed ${indexedArticles} articles and ${indexedChunks} chunks under “${collection.name}”. ${mode}`;
+    return `Removed ${keys.length} knowledge-base entries.`;
   },
 
   collectionPath(collection) {
