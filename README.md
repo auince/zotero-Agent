@@ -5,24 +5,24 @@ A Zotero 9 plugin MVP that turns the currently selected collection into a local,
 ## What is implemented
 
 - **Three-level local index:** collection path → article metadata → paragraph chunks from Zotero's already-indexed PDF text cache.
-- **Hierarchical retrieval:** lexical search returns evidence with collection path, item key, chunk level, and paragraph number. Article metadata is retained as a separate `metadata` chunk.
+- **Hybrid hierarchical retrieval:** SiliconFlow `BAAI/bge-m3` embeddings retrieve semantic candidates; `BAAI/bge-reranker-v2-m3` reranks them. Results retain collection path, item key, chunk level, and paragraph number. Article metadata is a separate `metadata` chunk.
 - **DeepSeek agent:** uses OpenAI-compatible DeepSeek tool calls to choose among local knowledge-base retrieval, web search, arXiv search, and GitHub source-code search.
 - **Local research memory:** each user/agent exchange is retained in a local JSONL log; once per day (or on demand), it becomes a compact Markdown note with a representative title, questions, insights, and cited Zotero papers.
-- **Privacy boundary:** the index, conversation log, and Markdown notes are in `<Zotero data directory>/research-agent/`. API keys are Zotero profile preferences, not files in this repository. Only text sent to the chosen external tool or DeepSeek leaves the computer.
+- **Privacy boundary:** the index, conversation log, and Markdown notes are in `<Zotero data directory>/research-agent/`. API keys are Zotero profile preferences, not files in this repository. Chunk text is sent to SiliconFlow during embedding and candidate text is sent during reranking; only the resulting vectors and local index are retained locally.
 
 ## Install the prototype
 
 1. Use the included `research-agent-0.1.0.xpi` (or create it with the packaging command below).
 2. Zotero → **Tools → Add-ons** → gear icon → **Install Add-on From File…**.
 3. Restart Zotero and open **Tools → Research Agent**.
-4. Go to Zotero **Settings → Research Agent** and set your DeepSeek API key. GitHub and Brave Search keys are optional.
+4. Go to Zotero **Settings → Research Agent** and set both your DeepSeek and SiliconFlow API keys. GitHub and Brave Search keys are optional.
 5. Select a collection, choose **Index selected collection**, then ask a question.
 
 ## External tools
 
 | Tool | Default implementation | Credential |
 |---|---|---|
-| Knowledge base | Local lexical retrieval over the collection/article/paragraph index | none |
+| Knowledge base | SiliconFlow `BAAI/bge-m3` semantic retrieval + `BAAI/bge-reranker-v2-m3` reranking over the local collection/article/paragraph index | SiliconFlow required |
 | DeepSeek agent | `https://api.deepseek.com/chat/completions` | required |
 | Web | DuckDuckGo HTML fallback; Brave Search when configured | Brave optional |
 | arXiv | arXiv Atom API | none |
@@ -39,7 +39,7 @@ unzip -t research-agent-0.1.0.xpi
 
 ## Deliberate MVP limits
 
-- Retrieval is lexical, deterministic, and local. The next technical increment is a pluggable embedding backend plus SQLite/FAISS-style vector index and hybrid re-ranking.
+- Vectors are stored alongside chunks in the local JSON index. This keeps the prototype dependency-free but is not the best format for very large libraries; the next increment is a SQLite/FAISS-style vector index and background incremental indexing.
 - The plugin consumes Zotero's existing full-text cache. PDFs must already be indexed by Zotero; scanned PDFs need OCR first.
 - The daily job runs while Zotero is open and catches up for the previous day at next launch. It cannot run while Zotero itself is closed.
 - GitHub code search may reject unauthenticated requests; add a token in Settings when needed.

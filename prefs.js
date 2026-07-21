@@ -1,6 +1,10 @@
 pref("extensions.researchAgent.deepseekAPIKey", "");
 pref("extensions.researchAgent.deepseekBaseURL", "https://api.deepseek.com");
 pref("extensions.researchAgent.deepseekModel", "deepseek-chat");
+pref("extensions.researchAgent.siliconFlowAPIKey", "");
+pref("extensions.researchAgent.siliconFlowBaseURL", "https://api.siliconflow.cn/v1");
+pref("extensions.researchAgent.embeddingModel", "BAAI/bge-m3");
+pref("extensions.researchAgent.rerankModel", "BAAI/bge-reranker-v2-m3");
 pref("extensions.researchAgent.githubToken", "");
 pref("extensions.researchAgent.braveAPIKey", "");
 pref("extensions.researchAgent.dailyNotesEnabled", true);

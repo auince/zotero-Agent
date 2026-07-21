@@ -7,6 +7,7 @@ var ResearchAgentIndexer = {
     if (!collection) throw new Error("Select a regular Zotero collection first.");
     const index = await ResearchAgentStorage.getIndex();
     const collectionNodes = [collection, ...collection.getDescendents(false, "collection").map((node) => Zotero.Collections.get(node.id))];
+    const semanticEnabled = Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey"));
     let indexedArticles = 0;
     let indexedChunks = 0;
 
@@ -19,13 +20,20 @@ var ResearchAgentIndexer = {
         index.articles[item.key] = article;
         index.chunks = index.chunks.filter((chunk) => chunk.articleKey !== item.key || chunk.collectionID !== current.id);
         const chunks = this.chunkArticle(article);
+        if (semanticEnabled) await this.embedChunks(chunks);
         index.chunks.push(...chunks);
         indexedArticles++;
         indexedChunks += chunks.length;
       }
     }
+    index.semantic = {
+      embeddingModel: Zotero.Prefs.get("extensions.researchAgent.embeddingModel") || "BAAI/bge-m3",
+      rerankModel: Zotero.Prefs.get("extensions.researchAgent.rerankModel") || "BAAI/bge-reranker-v2-m3",
+      enabled: semanticEnabled
+    };
     await ResearchAgentStorage.saveIndex(index);
-    return `Indexed ${indexedArticles} articles and ${indexedChunks} chunks under “${collection.name}”.`;
+    const mode = semanticEnabled ? "SiliconFlow embeddings generated; retrieval will rerank candidates." : "Lexical-only mode: add a SiliconFlow API key and reindex to enable embeddings and reranking.";
+    return `Indexed ${indexedArticles} articles and ${indexedChunks} chunks under “${collection.name}”. ${mode}`;
   },
 
   collectionPath(collection) {
@@ -124,13 +132,42 @@ var ResearchAgentIndexer = {
     };
   },
 
+  async embedChunks(chunks) {
+    const batchSize = 24;
+    for (let start = 0; start < chunks.length; start += batchSize) {
+      const batch = chunks.slice(start, start + batchSize);
+      const inputs = batch.map((chunk) => `${chunk.collectionPath.join(" / ")}\n${chunk.title}\n${chunk.text}`);
+      const vectors = await ResearchAgentSemantic.embed(inputs);
+      batch.forEach((chunk, index) => { chunk.embedding = vectors[index]; });
+    }
+  },
+
   async search(query, limit = 8) {
     const index = await ResearchAgentStorage.getIndex();
     const terms = this.tokens(query);
-    const scored = index.chunks.map((chunk) => ({ chunk, score: this.score(chunk, terms) })).filter(({ score }) => score > 0);
+    const semanticReady = Boolean(Zotero.Prefs.get("extensions.researchAgent.siliconFlowAPIKey")) && index.chunks.some((chunk) => chunk.embedding);
+    let queryEmbedding = null;
+    if (semanticReady) {
+      try { [queryEmbedding] = await ResearchAgentSemantic.embed([query]); } catch (error) { Zotero.logError(error); }
+    }
+    const scored = index.chunks.map((chunk) => {
+      const lexicalScore = this.score(chunk, terms);
+      const semanticScore = queryEmbedding ? ResearchAgentSemantic.cosine(queryEmbedding, chunk.embedding) : 0;
+      const lexicalWeight = terms.length ? Math.min(1, lexicalScore / (terms.length * 2)) : 0;
+      return { chunk, lexicalScore, semanticScore, score: queryEmbedding ? lexicalWeight * 0.35 + ((semanticScore + 1) / 2) * 0.65 : lexicalScore };
+    }).filter(({ score }) => score > 0);
     scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, limit).map(({ chunk, score }) => ({
-      score,
+    let ranked = scored.slice(0, 36);
+    if (queryEmbedding && ranked.length) {
+      try { ranked = await ResearchAgentSemantic.rerank(query, ranked, limit); } catch (error) { Zotero.logError(error); ranked = ranked.slice(0, limit); }
+    } else {
+      ranked = ranked.slice(0, limit);
+    }
+    return ranked.slice(0, limit).map(({ chunk, score, lexicalScore, semanticScore, rerankScore }) => ({
+      score: rerankScore ?? score,
+      lexicalScore,
+      semanticScore,
+      rerankScore,
       citation: `${chunk.title} [${chunk.articleKey}] · ${chunk.collectionPath.join(" / ")} · ${chunk.level} ${chunk.sequence}`,
       text: chunk.text
     }));
