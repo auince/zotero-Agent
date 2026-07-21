@@ -1,6 +1,6 @@
 /* global Services, Zotero */
 
-for (const module of ["storage", "memory", "jobs", "semantic", "indexer", "tools", "agent", "daily-notes", "sidebar"]) {
+for (const module of ["storage", "memory", "jobs", "semantic", "indexer", "tools", "agent", "daily-notes", "markdown", "sidebar"]) {
   Services.scriptloader.loadSubScript(`${ResearchAgentRootURI}src/${module}.js`);
 }
 

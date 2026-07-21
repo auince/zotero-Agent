@@ -1,4 +1,4 @@
-/* global Zotero, ResearchAgentAgent, ResearchAgentIndexer, ResearchAgentJobs, ResearchAgentDailyNotes, ResearchAgentStorage, ResearchAgentMemory */
+/* global Zotero, ResearchAgentAgent, ResearchAgentIndexer, ResearchAgentJobs, ResearchAgentDailyNotes, ResearchAgentStorage, ResearchAgentMemory, ResearchAgentMarkdown */
 
 var ResearchAgentSidebar = {
   sectionID: null,
@@ -63,6 +63,7 @@ var ResearchAgentSidebar = {
       .research-agent-trace{border-color:var(--ra-border);background:rgba(255,255,255,.025)}.research-agent-trace-reasoning,.research-agent-tool-event{border-radius:6px;background:rgba(255,255,255,.055);color:var(--fill-secondary,#b7b7b7)}
       .research-agent-citation{border-radius:6px;background:rgba(120,168,255,.14);color:var(--ra-accent)}
       .research-agent textarea{min-height:100px;padding:11px;border-color:var(--ra-border);border-radius:9px;background:var(--ra-surface);box-shadow:inset 0 1px rgba(255,255,255,.025)}
+      .research-agent-message-content> :first-child,.research-agent-answer> :first-child{margin-top:0}.research-agent-message-content> :last-child,.research-agent-answer> :last-child{margin-bottom:0}.research-agent-message-content p,.research-agent-answer p{margin:0 0:.72em}.research-agent-message-content h1,.research-agent-message-content h2,.research-agent-message-content h3,.research-agent-message-content h4,.research-agent-answer h1,.research-agent-answer h2,.research-agent-answer h3,.research-agent-answer h4{margin:.9em 0 .42em;line-height:1.28}.research-agent-message-content h1,.research-agent-answer h1{font-size:1.25em}.research-agent-message-content h2,.research-agent-answer h2{font-size:1.15em}.research-agent-message-content h3,.research-agent-answer h3{font-size:1.05em}.research-agent-message-content ul,.research-agent-message-content ol,.research-agent-answer ul,.research-agent-answer ol{margin:.35em 0 .7em;padding-inline-start:1.45em}.research-agent-message-content li,.research-agent-answer li{margin:.23em 0}.research-agent-message-content pre,.research-agent-answer pre{margin:.7em 0;padding:9px;overflow:auto;border:1px solid var(--ra-border);border-radius:7px;background:#1c1c1c}.research-agent-message-content code,.research-agent-answer code{padding:.12em .32em;border-radius:4px;background:rgba(255,255,255,.09);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em}.research-agent-message-content pre code,.research-agent-answer pre code{padding:0;background:transparent}.research-agent-message-content blockquote,.research-agent-answer blockquote{margin:.7em 0;padding:.1em 0 .1em .8em;border-inline-start:3px solid var(--ra-accent);color:var(--fill-secondary,#b7b7b7)}.research-agent-message-content table,.research-agent-answer table{display:block;max-width:100%;margin:.7em 0;overflow:auto;border-collapse:collapse}.research-agent-message-content th,.research-agent-message-content td,.research-agent-answer th,.research-agent-answer td{padding:5px 7px;border:1px solid var(--ra-border);text-align:left}.research-agent-message-content th,.research-agent-answer th{background:rgba(255,255,255,.06)}.research-agent-message-content a,.research-agent-answer a{color:var(--ra-accent);text-decoration:none}.research-agent-message-content a:hover,.research-agent-answer a:hover{text-decoration:underline}.research-agent-markdown-pending{white-space:pre-wrap}
     `;
     body.append(style);
     const root = doc.createElement("div"); root.className = "research-agent";
@@ -309,7 +310,9 @@ var ResearchAgentSidebar = {
   addMessage(doc, log, role, text, isUser, citations) {
     const message = doc.createElement("div"); message.className = `research-agent-message${isUser ? " is-user" : ""}`;
     const label = doc.createElement("span"); label.className = "research-agent-role"; label.textContent = role;
-    const content = doc.createElement("div"); content.className = "research-agent-message-content"; content.textContent = text;
+    const content = doc.createElement("div"); content.className = "research-agent-message-content";
+    if (isUser) content.textContent = text;
+    else ResearchAgentMarkdown.render(doc, content, text);
     message.append(label, content); if (citations?.length) this.addCitations(doc, message, citations); log.append(message); log.scrollTop = log.scrollHeight; return message;
   },
 
@@ -325,6 +328,7 @@ var ResearchAgentSidebar = {
     const message = doc.createElement("div"); message.className = "research-agent-message research-agent-response";
     const label = doc.createElement("span"); label.className = "research-agent-role"; label.textContent = "助手";
     const answer = doc.createElement("div"); answer.className = "research-agent-answer"; answer.textContent = "正在准备回答…";
+    let markdown = null;
     const trace = doc.createElement("details"); trace.className = "research-agent-trace"; trace.open = true;
     const traceSummary = doc.createElement("summary"); traceSummary.textContent = "推理、记忆与检索过程";
     const traceBody = doc.createElement("div"); traceBody.className = "research-agent-trace-body"; trace.append(traceSummary, traceBody); message.append(label, answer, trace); log.append(message);
@@ -333,8 +337,8 @@ var ResearchAgentSidebar = {
     const names = { search_knowledge_base: "检索本地知识库", search_web: "搜索网页", search_arxiv: "查询 arXiv", search_github_code: "检索 GitHub 源码" };
     const describe = (event) => `${names[event.name] || event.name}${event.args?.query ? ` · ${event.args.query}` : ""}`;
     return {
-      handle: (event) => { if (event.type === "content") { if (!answerStarted) { answer.textContent = ""; answerStarted = true; } answer.append(doc.createTextNode(event.text)); } else if (event.type === "reasoning") { if (!reasoningBlock) { reasoningBlock = doc.createElement("div"); reasoningBlock.className = "research-agent-trace-reasoning"; traceBody.append(reasoningBlock); steps.push({ type: "reasoning", text: "" }); traceSummary.textContent = `推理、记忆与检索过程 · ${steps.length} 步`; } reasoningBlock.append(doc.createTextNode(event.text)); steps.at(-1).text += event.text; } else if (event.type === "memory") addTrace(event.text, "research-agent-tool-event", "memory"); else if (event.type === "tool-start") addTrace(`正在${describe(event)}`); else if (event.type === "tool-finish") addTrace(`${describe(event)} · 找到 ${event.count} 条结果`); else if (event.type === "tool-error") addTrace(`${describe(event)} · 调用失败：${event.error}`); },
-      finish: (result) => { if (!answerStarted) answer.textContent = result.answer || "模型没有返回正文。"; if (!steps.length) addTrace("模型直接生成回答，未调用外部检索工具。"); trace.open = false; if (result.citations?.length) ResearchAgentSidebar.addCitations(doc, message, result.citations); log.scrollTop = log.scrollHeight; },
+      handle: (event) => { if (event.type === "content") { if (!answerStarted) { answer.replaceChildren(); markdown = ResearchAgentMarkdown.createStreamRenderer(doc, answer); answerStarted = true; } markdown.append(event.text); log.scrollTop = log.scrollHeight; } else if (event.type === "reasoning") { if (!reasoningBlock) { reasoningBlock = doc.createElement("div"); reasoningBlock.className = "research-agent-trace-reasoning"; traceBody.append(reasoningBlock); steps.push({ type: "reasoning", text: "" }); traceSummary.textContent = `推理、记忆与检索过程 · ${steps.length} 步`; } reasoningBlock.append(doc.createTextNode(event.text)); steps.at(-1).text += event.text; } else if (event.type === "memory") addTrace(event.text, "research-agent-tool-event", "memory"); else if (event.type === "tool-start") addTrace(`正在${describe(event)}`); else if (event.type === "tool-finish") addTrace(`${describe(event)} · 找到 ${event.count} 条结果`); else if (event.type === "tool-error") addTrace(`${describe(event)} · 调用失败：${event.error}`); },
+      finish: (result) => { if (!answerStarted) { answer.replaceChildren(); markdown = ResearchAgentMarkdown.createStreamRenderer(doc, answer); markdown.append(result.answer || "模型没有返回正文。"); } markdown.finish(); if (!steps.length) addTrace("模型直接生成回答，未调用外部检索工具。"); trace.open = false; if (result.citations?.length) ResearchAgentSidebar.addCitations(doc, message, result.citations); log.scrollTop = log.scrollHeight; },
       fail: (error) => { answer.textContent = `回答失败：${error.message}`; addTrace("请求未完成；请检查模型配置或网络连接。"); trace.open = true; },
       trace: () => steps
     };
