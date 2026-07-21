@@ -9,3 +9,5 @@ pref("extensions.researchAgent.githubToken", "");
 pref("extensions.researchAgent.braveAPIKey", "");
 pref("extensions.researchAgent.dailyNotesEnabled", true);
 pref("extensions.researchAgent.maxChunkChars", 1400);
+pref("extensions.researchAgent.contextWindowTokens", 360000);
+pref("extensions.researchAgent.syncItemOnConversationSwitch", true);

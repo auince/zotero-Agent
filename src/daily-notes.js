@@ -29,7 +29,7 @@ var ResearchAgentDailyNotes = {
     const entries = (await ResearchAgentStorage.getConversations()).filter((entry) => entry.at?.slice(0, 10) === day);
     if (!entries.length) return null;
     const digest = await this.summarize(entries, day);
-    const cited = [...new Set(entries.flatMap((entry) => entry.citations || []).filter((citation) => citation.type === "zotero").map((citation) => citation.value))];
+    const cited = [...new Set(entries.flatMap((entry) => entry.citations || []).filter((citation) => citation.type === "zotero").map((citation) => citation.label || citation.value))];
     const markdown = [
       `# ${digest.title}`,
       "",

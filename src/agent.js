@@ -1,24 +1,25 @@
-/* global Zotero, ResearchAgentStorage, ResearchAgentTools */
+/* global Zotero, ResearchAgentMemory, ResearchAgentTools */
 
 var ResearchAgentAgent = {
   systemPrompt: `You are a Zotero research agent. Use search_knowledge_base before making claims about the user's library. Use search_web for current external facts, search_arxiv for scholarly preprints, and search_github_code for implementation questions. Cite Zotero evidence as [item key] and external sources as Markdown links. Be concise, distinguish evidence from inference, and do not invent sources.`,
 
-  async answer(question, { onEvent } = {}) {
+  async answer(question, { onEvent, conversation } = {}) {
     const apiKey = Zotero.Prefs.get("extensions.researchAgent.deepseekAPIKey");
     if (!apiKey) throw new Error("请先在 Zotero 设置 → Research Agent 中填写 DeepSeek API Key。");
-    const messages = [
+    let messages = [
       { role: "system", content: this.systemPrompt },
       { role: "user", content: question }
     ];
+    if (conversation) {
+      const memoryMessages = await ResearchAgentMemory.prepare(conversation, question, apiKey, onEvent);
+      messages = [{ role: "system", content: this.systemPrompt }, ...memoryMessages];
+    }
     const citations = [];
     for (let step = 0; step < 8; step++) {
       const message = await this.completeStream(messages, apiKey, onEvent);
       if (!message.tool_calls?.length) {
         const answer = message.content || "模型没有返回正文。";
         const result = { answer, citations: this.uniqueCitations(citations) };
-        await ResearchAgentStorage.appendConversation({
-          at: new Date().toISOString(), question, answer, citations: result.citations
-        });
         return result;
       }
       messages.push({ role: "assistant", content: message.content || "", tool_calls: message.tool_calls });

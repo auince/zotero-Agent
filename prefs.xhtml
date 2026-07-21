@@ -51,5 +51,11 @@
       <html:div class="field"><html:label for="ra-brave-key">Brave Search API 密钥</html:label><html:input id="ra-brave-key" type="password" preference="extensions.researchAgent.braveAPIKey"/></html:div>
       <checkbox label="每天自动生成一条精炼知识笔记" preference="extensions.researchAgent.dailyNotesEnabled"/>
     </html:section>
+
+    <html:section class="service optional">
+      <html:h3 class="service-title">会话记忆与上下文</html:h3>
+      <html:p class="service-note">上下文余量按估算 token 显示。超过上限时，助手会自动创建摘要层并按当前问题检索相关记忆。所有修改立即生效，无需重启 Zotero。</html:p>
+      <html:div class="field"><html:label for="ra-context-limit">上下文上限（估算 token）</html:label><html:input id="ra-context-limit" type="number" min="16000" step="1000" preference="extensions.researchAgent.contextWindowTokens"/></html:div>
+    </html:section>
   </html:main>
 </vbox>
