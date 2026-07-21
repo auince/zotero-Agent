@@ -17,7 +17,7 @@ var ResearchAgentAgent = {
       messages = [{ role: "system", content: this.systemPrompt }, ...memoryMessages];
     }
     if (ragEnabled) {
-      messages.splice(1, 0, { role: "system", content: `知识库检索已启用。只能检索用户选择的知识库（${rag?.knowledgeBaseTitle || "当前选择"}），不得把未选择的本地文献作为证据。` });
+      messages.splice(1, 0, { role: "system", content: `知识库检索已启用。本地知识库证据只能来自用户选择的知识库（${rag?.knowledgeBaseTitle || "当前选择"}），不得把未选择的本地文献作为证据。此范围限制只适用于 search_knowledge_base；需要外部最新信息、预印本或源码时，可分别使用 search_web、search_arxiv、search_github_code，并在最终回答中明确标注外部来源。` });
     } else {
       if (!rag?.paperContext) throw new Error("未启用 RAG 时，请先在左侧选择一篇论文。 ");
       messages.splice(1, 0, { role: "system", content: `知识库与网络工具均已关闭。只分析下面这篇当前论文，不能引用或推断其外部内容：\n\n${rag.paperContext}` });

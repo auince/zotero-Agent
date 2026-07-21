@@ -45,7 +45,8 @@
     </html:section>
 
     <html:section class="service optional">
-      <html:h3 class="service-title">可选检索服务</html:h3>
+      <html:h3 class="service-title">联网检索服务</html:h3>
+      <html:p class="service-note">未填写 Brave 密钥时，网页搜索会自动使用 Bing RSS。GitHub 源码搜索必须填写有代码搜索权限的 GitHub 访问令牌。</html:p>
       <html:div class="field"><html:label for="ra-github-token">GitHub 访问令牌</html:label><html:input id="ra-github-token" type="password" preference="extensions.researchAgent.githubToken"/></html:div>
       <html:div class="field"><html:label for="ra-brave-key">Brave Search API 密钥</html:label><html:input id="ra-brave-key" type="password" preference="extensions.researchAgent.braveAPIKey"/></html:div>
       <checkbox label="每天自动生成一条精炼知识笔记" preference="extensions.researchAgent.dailyNotesEnabled"/>

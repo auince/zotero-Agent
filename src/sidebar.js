@@ -1,4 +1,4 @@
-/* global Zotero, ResearchAgentAgent, ResearchAgentIndexer, ResearchAgentJobs, ResearchAgentDailyNotes, ResearchAgentStorage, ResearchAgentMemory, ResearchAgentMarkdown */
+/* global Zotero, ResearchAgentAgent, ResearchAgentIndexer, ResearchAgentJobs, ResearchAgentDailyNotes, ResearchAgentStorage, ResearchAgentMemory, ResearchAgentMarkdown, ResearchAgentTools */
 
 var ResearchAgentSidebar = {
   sectionID: null,
@@ -224,7 +224,7 @@ var ResearchAgentSidebar = {
     ragToggle.addEventListener("change", () => {
       ragSelect.disabled = !ragToggle.checked;
       if (ragToggle.checked) {
-        ragNote.textContent = "请选择一个已嵌入的知识库；检索仅在该范围内进行，并且不会调用硅基流动。";
+        ragNote.textContent = "请选择一个已嵌入的知识库；本地检索仅在该范围内进行。联网、arXiv 与 GitHub 工具可按需调用；不会调用硅基流动。";
         refreshRagBases().catch((error) => { Zotero.logError(error); status.textContent = `无法读取知识库：${error.message}`; });
       } else {
         ragNote.textContent = "未启用 RAG：仅分析当前左侧论文，不连接知识库或网络工具。";
@@ -399,7 +399,16 @@ var ResearchAgentSidebar = {
     const selectedKeys = () => [...entries.selectedOptions].map((option) => option.value);
     const refreshEntries = async () => { const records = await ResearchAgentIndexer.listEntries(); entries.replaceChildren(); for (const record of records) { const option = doc.createElement("option"); option.value = record.key; option.textContent = `${record.title} [${record.key}] — ${record.collectionPath.join(" / ")}`; entries.append(option); } if (!records.length) { const option = doc.createElement("option"); option.disabled = true; option.textContent = "尚未嵌入任何文献"; entries.append(option); } };
     const entryActions = doc.createElement("div"); entryActions.className = "research-agent-actions";
-    entryActions.append(this.button(doc, "刷新", refreshEntries), this.button(doc, "重嵌入所选", () => startJob((callback) => ResearchAgentIndexer.startReembedEntries(selectedKeys(), callback))), this.button(doc, "移除所选", async () => { const keys = selectedKeys(); if (!keys.length || !doc.defaultView.confirm(`从本地知识库移除 ${keys.length} 个条目？Zotero 原始文献不会被删除。`)) return; status.textContent = await ResearchAgentIndexer.removeEntries(keys); await refreshEntries(); }), this.button(doc, "生成今日笔记", () => generateTodayNote()));
+    const checkTools = async () => {
+      status.textContent = "正在检查本地知识库、网页、arXiv 与 GitHub 源码工具…";
+      try {
+        const checks = await ResearchAgentTools.healthCheck();
+        status.textContent = checks.map((check) => `${check.ok ? "✓" : "×"} ${check.name}：${check.detail}`).join("； ");
+      } catch (error) {
+        Zotero.logError(error); status.textContent = `工具检查失败：${error.message}`;
+      }
+    };
+    entryActions.append(this.button(doc, "刷新", refreshEntries), this.button(doc, "重嵌入所选", () => startJob((callback) => ResearchAgentIndexer.startReembedEntries(selectedKeys(), callback))), this.button(doc, "移除所选", async () => { const keys = selectedKeys(); if (!keys.length || !doc.defaultView.confirm(`从本地知识库移除 ${keys.length} 个条目？Zotero 原始文献不会被删除。`)) return; status.textContent = await ResearchAgentIndexer.removeEntries(keys); await refreshEntries(); }), this.button(doc, "检查工具可用性", checkTools), this.button(doc, "生成今日笔记", () => generateTodayNote()));
     management.append(managementTitle, entryCopy, entries, entryActions); knowledgePanel.append(indexCard, management);
     const notesCard = doc.createElement("div"); notesCard.className = "research-agent-card";
     const notesTitle = doc.createElement("div"); notesTitle.className = "research-agent-card-title"; notesTitle.textContent = "每日研究笔记";
