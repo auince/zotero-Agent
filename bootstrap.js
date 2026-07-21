@@ -4,7 +4,7 @@ var chromeHandle;
 var ResearchAgent;
 var ResearchAgentRootURI;
 
-function startup({ rootURI }) {
+async function startup({ rootURI }) {
   ResearchAgentRootURI = rootURI;
   const aomStartup = Cc["@mozilla.org/addons/addon-manager-startup;1"]
     .getService(Ci.amIAddonManagerStartup);
@@ -12,7 +12,7 @@ function startup({ rootURI }) {
     ["content", "research-agent", "chrome/content/"]
   ]);
   Services.scriptloader.loadSubScript(rootURI + "src/main.js");
-  ResearchAgent.startup({ rootURI });
+  await ResearchAgent.startup({ rootURI });
 }
 
 function shutdown() {

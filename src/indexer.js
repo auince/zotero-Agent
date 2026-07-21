@@ -1,4 +1,4 @@
-/* global OS, PathUtils, Zotero, ZoteroPane */
+/* global Zotero, ZoteroPane */
 
 var ResearchAgentIndexer = {
   startCurrentCollection(onProgress) {
@@ -125,7 +125,7 @@ var ResearchAgentIndexer = {
   async readAttachmentText(attachment) {
     try {
       const cachePath = Zotero.Fulltext.getItemCacheFile(attachment).path;
-      if (await OS.File.exists(cachePath)) return await Zotero.File.getContentsAsync(cachePath);
+      return await Zotero.File.getContentsAsync(cachePath);
     } catch (error) {
       Zotero.debug(`Research Agent could not read indexed text for ${attachment.key}: ${error}`);
     }

@@ -1,4 +1,4 @@
-/* global OS, PathUtils, Zotero */
+/* global Zotero */
 
 var ResearchAgentStorage = {
   root: null,
@@ -6,12 +6,18 @@ var ResearchAgentStorage = {
   conversationsPath: null,
   settingsPath: null,
 
-  initialize() {
-    this.root = PathUtils.join(Zotero.DataDirectory.dir, "research-agent");
-    this.indexPath = PathUtils.join(this.root, "knowledge-index.json");
-    this.conversationsPath = PathUtils.join(this.root, "conversations.jsonl");
-    this.settingsPath = PathUtils.join(this.root, "state.json");
-    return OS.File.makeDir(this.root, { ignoreExisting: true });
+  async initialize() {
+    this.root = this.join(Zotero.DataDirectory.dir, "research-agent");
+    this.indexPath = this.join(this.root, "knowledge-index.json");
+    this.conversationsPath = this.join(this.root, "conversations.jsonl");
+    this.settingsPath = this.join(this.root, "state.json");
+    await Zotero.File.createDirectoryIfMissingAsync(this.root);
+  },
+
+  join(base, ...segments) {
+    const file = Zotero.File.pathToFile(base).clone();
+    for (const segment of segments) file.append(segment);
+    return file.path;
   },
 
   async readJSON(path, fallback) {
@@ -26,7 +32,7 @@ var ResearchAgentStorage = {
 
   async writeJSON(path, value) {
     await this.initialize();
-    await OS.File.writeAtomic(path, JSON.stringify(value, null, 2), { tmpPath: `${path}.tmp` });
+    await Zotero.File.putContentsAsync(path, JSON.stringify(value, null, 2));
   },
 
   async getIndex() {
@@ -42,9 +48,7 @@ var ResearchAgentStorage = {
     await this.initialize();
     let existing = "";
     try { existing = await Zotero.File.getContentsAsync(this.conversationsPath); } catch (_) {}
-    await OS.File.writeAtomic(this.conversationsPath, `${existing}${JSON.stringify(entry)}\n`, {
-      tmpPath: `${this.conversationsPath}.tmp`
-    });
+    await Zotero.File.putContentsAsync(this.conversationsPath, `${existing}${JSON.stringify(entry)}\n`);
   },
 
   async getConversations() {
@@ -67,18 +71,18 @@ var ResearchAgentStorage = {
   },
 
   notesDirectory() {
-    return PathUtils.join(this.root, "notes");
+    return this.join(this.root, "notes");
   },
 
   async writeNote(filename, content) {
     const notes = this.notesDirectory();
-    await OS.File.makeDir(notes, { ignoreExisting: true });
-    const path = PathUtils.join(notes, filename);
-    await OS.File.writeAtomic(path, content, { tmpPath: `${path}.tmp` });
+    await Zotero.File.createDirectoryIfMissingAsync(notes);
+    const path = this.join(notes, filename);
+    await Zotero.File.putContentsAsync(path, content);
     return path;
   },
 
   openVault() {
-    Zotero.launchFile(this.root);
+    Zotero.launchFile(Zotero.File.pathToFile(this.root));
   }
 };

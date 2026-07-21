@@ -10,13 +10,14 @@ var ResearchAgent = {
   windows: new Set(),
   timer: null,
 
-  startup({ rootURI: pluginRootURI }) {
+  async startup({ rootURI: pluginRootURI }) {
     this.rootURI = pluginRootURI;
-    ResearchAgentStorage.initialize();
     Zotero.PreferencePanes.register({
       pluginID: this.id,
       src: this.rootURI + "prefs.xhtml"
     });
+    for (const window of Zotero.getMainWindows()) this.onMainWindowLoad(window);
+    await ResearchAgentStorage.initialize();
     this.timer = setInterval(() => ResearchAgentDailyNotes.runIfDue().catch(Zotero.logError), 60 * 60 * 1000);
     ResearchAgentDailyNotes.runIfDue().catch(Zotero.logError);
     Zotero.debug("Research Agent started");
