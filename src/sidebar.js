@@ -3,6 +3,9 @@
 var ResearchAgentSidebar = {
   sectionID: null,
   rootURI: null,
+  selectionListeners: new Set(),
+  pendingSelection: null,
+  readerSelectionHandler: null,
 
   register(rootURI) {
     this.rootURI = rootURI;
@@ -15,11 +18,42 @@ var ResearchAgentSidebar = {
       sidenav: { l10nID: "research-agent-header", icon: `${rootURI}icons/research-agent-small.png`, orderable: true },
       onRender: (props) => this.render(props)
     });
+    this.registerReaderSelectionAction();
   },
 
   unregister() {
     if (this.sectionID) Zotero.ItemPaneManager.unregisterSection(this.sectionID);
+    if (this.readerSelectionHandler) {
+      try { Zotero.Reader?.unregisterEventListener("renderTextSelectionPopup", this.readerSelectionHandler); } catch (error) { Zotero.logError(error); }
+    }
     this.sectionID = null;
+    this.readerSelectionHandler = null;
+    this.selectionListeners.clear();
+  },
+
+  registerReaderSelectionAction() {
+    if (!Zotero.Reader?.registerEventListener || this.readerSelectionHandler) return;
+    this.readerSelectionHandler = ({ reader, doc, params, append }) => {
+      const text = params?.annotation?.text?.trim();
+      if (!text) return;
+      const attachment = reader?._item || reader?.item;
+      const item = attachment?.parentItem || attachment;
+      const title = item?.getField?.("title") || "当前论文";
+      const button = doc.createElement("button");
+      button.type = "button";
+      button.textContent = "添加到研究助手";
+      button.addEventListener("click", () => { this.queueSelectedText({ text, title }); button.textContent = "已添加到研究助手"; button.disabled = true; });
+      append(button);
+    };
+    Zotero.Reader.registerEventListener("renderTextSelectionPopup", this.readerSelectionHandler, "research-agent@zotero.example.com");
+  },
+
+  queueSelectedText(payload) {
+    if (!payload?.text?.trim()) return;
+    this.pendingSelection = { text: payload.text.trim(), title: payload.title || "当前论文" };
+    for (const listener of this.selectionListeners) {
+      try { listener(this.pendingSelection); } catch (error) { Zotero.logError(error); }
+    }
   },
 
   render({ body, doc, item, setSectionSummary }) {
@@ -64,6 +98,7 @@ var ResearchAgentSidebar = {
       .research-agent-citation{border-radius:6px;background:rgba(120,168,255,.14);color:var(--ra-accent)}
       .research-agent textarea{min-height:100px;padding:11px;border-color:var(--ra-border);border-radius:9px;background:var(--ra-surface);box-shadow:inset 0 1px rgba(255,255,255,.025)}
       .research-agent-message-content> :first-child,.research-agent-answer> :first-child{margin-top:0}.research-agent-message-content> :last-child,.research-agent-answer> :last-child{margin-bottom:0}.research-agent-message-content p,.research-agent-answer p{margin:0 0:.72em}.research-agent-message-content h1,.research-agent-message-content h2,.research-agent-message-content h3,.research-agent-message-content h4,.research-agent-answer h1,.research-agent-answer h2,.research-agent-answer h3,.research-agent-answer h4{margin:.9em 0 .42em;line-height:1.28}.research-agent-message-content h1,.research-agent-answer h1{font-size:1.25em}.research-agent-message-content h2,.research-agent-answer h2{font-size:1.15em}.research-agent-message-content h3,.research-agent-answer h3{font-size:1.05em}.research-agent-message-content ul,.research-agent-message-content ol,.research-agent-answer ul,.research-agent-answer ol{margin:.35em 0 .7em;padding-inline-start:1.45em}.research-agent-message-content li,.research-agent-answer li{margin:.23em 0}.research-agent-message-content pre,.research-agent-answer pre{margin:.7em 0;padding:9px;overflow:auto;border:1px solid var(--ra-border);border-radius:7px;background:#1c1c1c}.research-agent-message-content code,.research-agent-answer code{padding:.12em .32em;border-radius:4px;background:rgba(255,255,255,.09);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em}.research-agent-message-content pre code,.research-agent-answer pre code{padding:0;background:transparent}.research-agent-message-content blockquote,.research-agent-answer blockquote{margin:.7em 0;padding:.1em 0 .1em .8em;border-inline-start:3px solid var(--ra-accent);color:var(--fill-secondary,#b7b7b7)}.research-agent-message-content table,.research-agent-answer table{display:block;max-width:100%;margin:.7em 0;overflow:auto;border-collapse:collapse}.research-agent-message-content th,.research-agent-message-content td,.research-agent-answer th,.research-agent-answer td{padding:5px 7px;border:1px solid var(--ra-border);text-align:left}.research-agent-message-content th,.research-agent-answer th{background:rgba(255,255,255,.06)}.research-agent-message-content a,.research-agent-answer a{color:var(--ra-accent);text-decoration:none}.research-agent-message-content a:hover,.research-agent-answer a:hover{text-decoration:underline}.research-agent-markdown-pending{white-space:pre-wrap}
+      .research-agent-message-content,.research-agent-answer{-moz-user-select:text!important;user-select:text!important;cursor:text}.research-agent-message-actions{user-select:none}
     `;
     body.append(style);
     const root = doc.createElement("div"); root.className = "research-agent";
@@ -127,6 +162,14 @@ var ResearchAgentSidebar = {
     };
     input.addEventListener("input", () => { resizeInput(); updateRemaining(); });
     input.addEventListener("keydown", (event) => { if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) { event.preventDefault(); ask(); } });
+    const receiveSelectedText = ({ text, title }) => {
+      const quote = text.split(/\r?\n/).map((line) => `> ${line}`).join("\n");
+      input.value = `我在《${title}》中选中了以下片段，请帮我分析：\n\n${quote}\n\n`;
+      activate("chat"); resizeInput(); updateRemaining(); input.focus();
+      status.textContent = "已将论文选中文本添加到输入框；补充问题后即可发送。";
+    };
+    this.selectionListeners.add(receiveSelectedText);
+    if (this.pendingSelection) receiveSelectedText(this.pendingSelection);
 
     const currentItem = () => {
       const item = Zotero.getActiveZoteroPane()?.getSelectedItems()?.[0];
@@ -166,19 +209,37 @@ var ResearchAgentSidebar = {
       for (const citation of citations) { const entry = citation.url ? doc.createElement("a") : doc.createElement("span"); entry.className = "research-agent-citation"; entry.textContent = citation.label || citation.value; if (citation.url) { entry.href = citation.url; entry.target = "_blank"; } list.append(entry); }
       box.append(title, list); target.append(box);
     };
+    const copyText = async (text) => {
+      const value = String(text || "");
+      try {
+        if (doc.defaultView.navigator.clipboard?.writeText) await doc.defaultView.navigator.clipboard.writeText(value);
+        else {
+          const area = doc.createElement("textarea"); area.value = value; area.setAttribute("aria-hidden", "true"); area.style.cssText = "position:fixed;left:-9999px;top:0";
+          doc.body.append(area); area.select();
+          if (!doc.execCommand("copy")) throw new Error("浏览器拒绝复制请求。");
+          area.remove();
+        }
+        status.textContent = "已复制到剪贴板。";
+      } catch (error) { Zotero.logError(error); status.textContent = "复制失败，请手动选择文本复制。"; }
+    };
     const renderConversation = () => {
       log.replaceChildren();
       if (!state.active) return;
       sessionTitle.textContent = state.active.title || "新对话";
       selected.textContent = state.active.paper?.title || "未关联文献；可在会话面板中关联当前文献。";
-      if (!state.active.messages.length) this.addMessage(doc, log, "助手", "这是一个本地保存的新会话。你可以提问，或先关联一篇当前文献。", false);
+      if (!state.active.messages.length) {
+        const greetingText = "这是一个本地保存的新会话。你可以提问，或先关联一篇当前文献。";
+        const greeting = this.addMessage(doc, log, "助手", greetingText, false);
+        const greetingActions = doc.createElement("div"); greetingActions.className = "research-agent-message-actions";
+        greetingActions.append(this.button(doc, "复制", () => copyText(greetingText))); greeting.append(greetingActions);
+      }
       for (const message of state.active.messages) {
         const item = this.addMessage(doc, log, message.role === "user" ? "你" : "助手", message.content, message.role === "user", message.role === "assistant" ? message.citations : null);
         const actions = doc.createElement("div"); actions.className = "research-agent-message-actions";
         if (message.role === "user") {
-          actions.append(this.button(doc, "编辑", () => editMessage(message, item)), this.button(doc, "撤回", () => retractMessage(message)));
+          actions.append(this.button(doc, "复制", () => copyText(message.content)), this.button(doc, "编辑", () => editMessage(message, item)), this.button(doc, "撤回", () => retractMessage(message)));
         } else {
-          actions.append(this.button(doc, "编辑", () => editMessage(message, item)), this.button(doc, "撤回此轮", () => retractAssistantTurn(message)));
+          actions.append(this.button(doc, "复制", () => copyText(message.content)), this.button(doc, "编辑", () => editMessage(message, item)), this.button(doc, "撤回此轮", () => retractAssistantTurn(message)));
         }
         item.append(actions);
       }
