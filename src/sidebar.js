@@ -39,18 +39,26 @@ var ResearchAgentSidebar = {
       const attachment = reader?._item || reader?.item;
       const item = attachment?.parentItem || attachment;
       const title = item?.getField?.("title") || "当前论文";
-      const button = doc.createElement("button");
-      button.type = "button";
-      button.textContent = "添加到研究助手";
-      button.addEventListener("click", () => { this.queueSelectedText({ text, title }); button.textContent = "已添加到研究助手"; button.disabled = true; });
-      append(button);
+      const actions = doc.createElement("div");
+      const addAction = (label, preset) => {
+        const button = doc.createElement("button");
+        button.type = "button"; button.textContent = label;
+        button.addEventListener("click", () => { this.queueSelectedText({ text, title, preset }); button.textContent = "已添加"; button.disabled = true; });
+        actions.append(button);
+      };
+      addAction("添加到研究助手", "");
+      addAction("解释选段", "请结合论文整体语境，解释下列选段的概念、推理逻辑与作者意图。");
+      addAction("翻译选段", "请将下列论文选段准确翻译为简洁中文；保留专业术语，并在必要时简要解释关键词。");
+      addAction("总结要点", "请提炼下列选段的核心观点、依据与对本文结论的作用。");
+      addAction("批判性阅读", "请批判性评估下列选段：它的假设、证据强度、可能的替代解释与局限分别是什么？");
+      append(actions);
     };
     Zotero.Reader.registerEventListener("renderTextSelectionPopup", this.readerSelectionHandler, "research-agent@zotero.example.com");
   },
 
   queueSelectedText(payload) {
     if (!payload?.text?.trim()) return;
-    this.pendingSelection = { text: payload.text.trim(), title: payload.title || "当前论文" };
+    this.pendingSelection = { text: payload.text.trim(), title: payload.title || "当前论文", preset: payload.preset || "" };
     for (const listener of this.selectionListeners) {
       try { listener(this.pendingSelection); } catch (error) { Zotero.logError(error); }
     }
@@ -99,6 +107,7 @@ var ResearchAgentSidebar = {
       .research-agent textarea{min-height:100px;padding:11px;border-color:var(--ra-border);border-radius:9px;background:var(--ra-surface);box-shadow:inset 0 1px rgba(255,255,255,.025)}
       .research-agent-message-content> :first-child,.research-agent-answer> :first-child{margin-top:0}.research-agent-message-content> :last-child,.research-agent-answer> :last-child{margin-bottom:0}.research-agent-message-content p,.research-agent-answer p{margin:0 0:.72em}.research-agent-message-content h1,.research-agent-message-content h2,.research-agent-message-content h3,.research-agent-message-content h4,.research-agent-answer h1,.research-agent-answer h2,.research-agent-answer h3,.research-agent-answer h4{margin:.9em 0 .42em;line-height:1.28}.research-agent-message-content h1,.research-agent-answer h1{font-size:1.25em}.research-agent-message-content h2,.research-agent-answer h2{font-size:1.15em}.research-agent-message-content h3,.research-agent-answer h3{font-size:1.05em}.research-agent-message-content ul,.research-agent-message-content ol,.research-agent-answer ul,.research-agent-answer ol{margin:.35em 0 .7em;padding-inline-start:1.45em}.research-agent-message-content li,.research-agent-answer li{margin:.23em 0}.research-agent-message-content pre,.research-agent-answer pre{margin:.7em 0;padding:9px;overflow:auto;border:1px solid var(--ra-border);border-radius:7px;background:#1c1c1c}.research-agent-message-content code,.research-agent-answer code{padding:.12em .32em;border-radius:4px;background:rgba(255,255,255,.09);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em}.research-agent-message-content pre code,.research-agent-answer pre code{padding:0;background:transparent}.research-agent-message-content blockquote,.research-agent-answer blockquote{margin:.7em 0;padding:.1em 0 .1em .8em;border-inline-start:3px solid var(--ra-accent);color:var(--fill-secondary,#b7b7b7)}.research-agent-message-content table,.research-agent-answer table{display:block;max-width:100%;margin:.7em 0;overflow:auto;border-collapse:collapse}.research-agent-message-content th,.research-agent-message-content td,.research-agent-answer th,.research-agent-answer td{padding:5px 7px;border:1px solid var(--ra-border);text-align:left}.research-agent-message-content th,.research-agent-answer th{background:rgba(255,255,255,.06)}.research-agent-message-content a,.research-agent-answer a{color:var(--ra-accent);text-decoration:none}.research-agent-message-content a:hover,.research-agent-answer a:hover{text-decoration:underline}.research-agent-markdown-pending{white-space:pre-wrap}
       .research-agent-message-content,.research-agent-answer{-moz-user-select:text!important;user-select:text!important;cursor:text}.research-agent-message-actions{user-select:none}
+      .research-agent-quick-prompts{display:flex;flex-wrap:wrap;gap:5px;padding:0 1px}.research-agent-quick-prompts-label{width:100%;margin-bottom:1px;color:var(--fill-secondary,#9d9d9d);font-size:.78em;font-weight:600}.research-agent-quick-prompts button{min-height:25px;padding:3px 7px;border-radius:999px;background:transparent;color:var(--fill-secondary,#b7b7b7);font-size:.8em}.research-agent-quick-prompts button:hover:not(:disabled){color:var(--ra-accent);background:rgba(120,168,255,.1)}
     `;
     body.append(style);
     const root = doc.createElement("div"); root.className = "research-agent";
@@ -143,6 +152,8 @@ var ResearchAgentSidebar = {
     const context = doc.createElement("div"); context.className = "research-agent-context";
     const contextLabel = doc.createElement("span"); contextLabel.className = "research-agent-context-label"; contextLabel.textContent = "本会话关联文献";
     const selected = doc.createElement("div"); selected.className = "research-agent-selected-item"; context.append(contextLabel, selected);
+    const quickPrompts = doc.createElement("div"); quickPrompts.className = "research-agent-quick-prompts";
+    const quickPromptsLabel = doc.createElement("span"); quickPromptsLabel.className = "research-agent-quick-prompts-label"; quickPromptsLabel.textContent = "论文阅读快捷问题";
     const log = doc.createElement("div"); log.className = "research-agent-log";
     const composer = doc.createElement("div"); composer.className = "research-agent-composer";
     const input = doc.createElement("textarea"); input.placeholder = "输入你的问题…"; input.setAttribute("aria-label", "向研究助手提问");
@@ -150,7 +161,7 @@ var ResearchAgentSidebar = {
     const send = this.button(doc, "发送", () => ask()); send.classList.add("research-agent-primary");
     const sendLine = doc.createElement("div"); sendLine.className = "research-agent-sendline";
     const hint = doc.createElement("span"); hint.className = "research-agent-hint"; hint.textContent = "⌘ / Ctrl + Enter 发送"; sendLine.append(hint, remaining, send);
-    composer.append(input, sendLine); chatPanel.append(rag, context, log, composer);
+    composer.append(input, sendLine); chatPanel.append(rag, context, quickPrompts, log, composer);
     const resizeInput = () => { input.style.height = "auto"; input.style.height = `${Math.min(Math.max(input.scrollHeight, 108), Math.max(150, doc.defaultView.innerHeight * .34))}px`; };
     const updateRemaining = () => {
       const limit = ResearchAgentMemory.limit();
@@ -162,9 +173,23 @@ var ResearchAgentSidebar = {
     };
     input.addEventListener("input", () => { resizeInput(); updateRemaining(); });
     input.addEventListener("keydown", (event) => { if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) { event.preventDefault(); ask(); } });
-    const receiveSelectedText = ({ text, title }) => {
+    const fillQuickPrompt = (prompt) => {
+      input.value = prompt; resizeInput(); updateRemaining(); input.focus();
+      status.textContent = "已填入快捷问题；可直接发送或继续修改。";
+    };
+    const readerPrompts = [
+      ["概述全文", "请用结构化方式概述本文的研究问题、核心方法、主要结论，以及它试图填补的研究空白。"],
+      ["创新贡献", "请提炼本文的创新点与贡献，并区分作者明确主张和可由证据支持的推断。"],
+      ["方法实验", "请梳理本文的方法、数据、实验设置、比较基线与评价指标，并指出复现时需要注意的关键细节。"],
+      ["结果解读", "请解释本文最重要的实验结果：它们支持什么结论、证据强度如何、是否存在反例或不确定性？"],
+      ["局限改进", "请批判性分析本文的局限、潜在偏差、未验证假设，并提出具体可行的改进方向。"],
+      ["关联我的研究", "请将本文与我当前的研究问题建立联系：哪些观点、方法或结论值得借鉴？还需要补足哪些证据？"]
+    ];
+    quickPrompts.append(quickPromptsLabel);
+    for (const [label, prompt] of readerPrompts) quickPrompts.append(this.button(doc, label, () => fillQuickPrompt(prompt)));
+    const receiveSelectedText = ({ text, title, preset }) => {
       const quote = text.split(/\r?\n/).map((line) => `> ${line}`).join("\n");
-      input.value = `我在《${title}》中选中了以下片段，请帮我分析：\n\n${quote}\n\n`;
+      input.value = `${preset || "我在下列论文选段中遇到了问题，请帮我分析："}\n\n论文：《${title}》\n\n${quote}\n\n`;
       activate("chat"); resizeInput(); updateRemaining(); input.focus();
       status.textContent = "已将论文选中文本添加到输入框；补充问题后即可发送。";
     };
