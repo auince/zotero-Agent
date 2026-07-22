@@ -79,7 +79,7 @@ var ResearchAgentSidebar = {
     }
     const style = doc.createElement("style");
     style.textContent = `
-      .research-agent { --ra-accent:#3478c5; --ra-accent-weak:#e9f2ff; --ra-border:color-mix(in srgb, currentColor 15%, transparent); display:flex; flex-direction:column; gap:10px; height:min(78vh, 980px); min-height:540px; font:menu; color:var(--fill-primary,#1d2733); }
+      .research-agent { --ra-accent:#3478c5; --ra-accent-weak:#e9f2ff; --ra-border:color-mix(in srgb, currentColor 15%, transparent); display:flex; flex-direction:column; gap:10px; height:min(78vh, 980px); min-height:540px; max-height:100%; overflow:hidden; font:menu; color:var(--fill-primary,#1d2733); }
       @media (prefers-color-scheme:dark) { .research-agent { --ra-accent:#7cb7ff; --ra-accent-weak:#1b3552; } }
       .research-agent-top { display:flex; gap:5px; padding:3px; border:1px solid var(--ra-border); border-radius:10px; background:color-mix(in srgb,var(--ra-accent) 5%,transparent); }
       .research-agent-tab { flex:1; min-height:30px; border:0; border-radius:7px; background:transparent; color:inherit; font:menu; font-weight:650; cursor:pointer; }
@@ -104,7 +104,7 @@ var ResearchAgentSidebar = {
       .research-agent-session-drawer,.research-agent-rag,.research-agent-context,.research-agent-card{border-color:var(--ra-border);border-radius:9px;background:var(--ra-subtle)}
       .research-agent-session-item{background:transparent}.research-agent-session-item.is-active{border-color:var(--ra-accent);background:var(--ra-accent-weak)}
       .research-agent-rag select,.research-agent-entry-list{border-color:var(--ra-border);background:var(--ra-surface-raised);color:FieldText}
-      .research-agent-log{padding:8px;border:0;border-radius:9px;background:var(--ra-surface);box-shadow:none}.research-agent-message{margin-bottom:9px;padding:10px;border:1px solid transparent;border-radius:8px;background:transparent}.research-agent-message.is-user{border-color:color-mix(in srgb,var(--ra-accent) 26%,transparent);background:var(--ra-accent-weak)}.research-agent-response{border-color:var(--ra-border);background:var(--ra-surface-raised)}.research-agent-role{font-size:.78em;color:var(--ra-accent)}
+      .research-agent-chat-panel{overflow:hidden}.research-agent-log{flex:1 1 0;min-height:0;padding:8px;border:0;border-radius:9px;background:var(--ra-surface);box-shadow:none}.research-agent-composer{flex:0 0 auto;min-height:0}.research-agent-message{margin-bottom:9px;padding:10px;border:1px solid transparent;border-radius:8px;background:transparent}.research-agent-message.is-user{border-color:color-mix(in srgb,var(--ra-accent) 26%,transparent);background:var(--ra-accent-weak)}.research-agent-response{border-color:var(--ra-border);background:var(--ra-surface-raised)}.research-agent-role{font-size:.78em;color:var(--ra-accent)}
       .research-agent-message-actions{gap:4px;margin-top:8px}.research-agent-message-actions button{min-height:23px;padding:2px 7px;border-color:transparent;background:transparent;color:var(--ra-muted)}.research-agent-message-actions button:hover:not(:disabled){background:var(--ra-subtle);color:ButtonText}
       .research-agent-edit-box{box-sizing:border-box;width:100%;min-height:92px;max-height:34vh;padding:9px;resize:vertical;border:1px solid var(--ra-accent);border-radius:7px;background:var(--ra-surface-raised);color:FieldText;font:menu;line-height:1.45}.research-agent-edit-box:focus{outline:2px solid color-mix(in srgb,var(--ra-accent) 45%,transparent);outline-offset:1px}.research-agent-edit-actions{justify-content:flex-end;margin-top:8px}
       .research-agent-trace{border-color:var(--ra-border);background:var(--ra-subtle)}.research-agent-trace-reasoning,.research-agent-tool-event{border-radius:6px;background:color-mix(in srgb,CanvasText 5%,Canvas);color:var(--ra-muted)}
@@ -121,7 +121,7 @@ var ResearchAgentSidebar = {
     const status = doc.createElement("div"); status.className = "research-agent-status"; status.textContent = "正在载入本地会话…";
     const tabs = doc.createElement("div"); tabs.className = "research-agent-top";
     const sessionPanel = doc.createElement("section"); sessionPanel.className = "research-agent-panel";
-    const chatPanel = doc.createElement("section"); chatPanel.className = "research-agent-panel is-active";
+    const chatPanel = doc.createElement("section"); chatPanel.className = "research-agent-panel research-agent-chat-panel is-active";
     const knowledgePanel = doc.createElement("section"); knowledgePanel.className = "research-agent-panel";
     const notesPanel = doc.createElement("section"); notesPanel.className = "research-agent-panel";
     const sessionTab = this.button(doc, "会话", () => activate("sessions")); sessionTab.classList.add("research-agent-tab", "research-agent-session-button");
@@ -174,7 +174,15 @@ var ResearchAgentSidebar = {
     const sendLine = doc.createElement("div"); sendLine.className = "research-agent-sendline";
     const hint = doc.createElement("span"); hint.className = "research-agent-hint"; hint.textContent = "⌘ / Ctrl + Enter 发送"; sendLine.append(hint, remaining, send);
     composer.append(input, sendLine); chatPanel.append(rag, context, quickPrompts, log, composer);
-    const resizeInput = () => { input.style.height = "auto"; input.style.height = `${Math.min(Math.max(input.scrollHeight, 108), Math.max(150, doc.defaultView.innerHeight * .34))}px`; };
+    const resizeInput = () => {
+      input.style.height = "auto";
+      const fixedHeight = [...chatPanel.children]
+        .filter((child) => child !== log && child !== composer)
+        .reduce((sum, child) => sum + child.getBoundingClientRect().height, 0);
+      const available = chatPanel.clientHeight - fixedHeight - sendLine.getBoundingClientRect().height - 28;
+      const maxHeight = Math.max(108, Math.min(doc.defaultView.innerHeight * .34, available));
+      input.style.height = `${Math.min(Math.max(input.scrollHeight, 108), maxHeight)}px`;
+    };
     const updateRemaining = () => {
       const limit = ResearchAgentMemory.limit();
       const left = state.active ? ResearchAgentMemory.remaining(state.active, input.value) : limit;
@@ -450,7 +458,11 @@ var ResearchAgentSidebar = {
       this.button(doc, "打开笔记文件夹", async () => { await ResearchAgentStorage.openNotesDirectory(); })
     );
     noteLayout.append(noteList, notePreview); notesCard.append(notesTitle, notesCopy, noteActions, noteLayout); notesPanel.append(notesCard);
-    root.append(tabs, status, sessionPanel, chatPanel, knowledgePanel, notesPanel); body.append(root); resizeInput(); initializeSessions().catch((error) => { Zotero.logError(error); status.textContent = `无法载入会话：${error.message}`; });
+    root.append(tabs, status, sessionPanel, chatPanel, knowledgePanel, notesPanel); body.append(root); resizeInput();
+    const resizeObserver = doc.defaultView.ResizeObserver ? new doc.defaultView.ResizeObserver(resizeInput) : null;
+    resizeObserver?.observe(root); resizeObserver?.observe(chatPanel);
+    doc.defaultView.addEventListener("resize", resizeInput);
+    initializeSessions().catch((error) => { Zotero.logError(error); status.textContent = `无法载入会话：${error.message}`; });
   },
 
   button(doc, label, onClick) { const button = doc.createElement("button"); button.type = "button"; button.textContent = label; button.addEventListener("click", onClick); return button; },
