@@ -23,9 +23,37 @@ jobs:
           zip -X -r "research-agent-${version}.xpi" manifest.json bootstrap.js prefs.js prefs.xhtml prefs-ui.js chrome src locale icons vendor LICENSE README.md
           unzip -t "research-agent-${version}.xpi"
 
+      - name: 生成 Zotero 自动更新清单
+        shell: bash
+        run: |
+          version="$(node -p "require('./manifest.json').version")"
+          hash="$(sha256sum "research-agent-${version}.xpi" | awk '{print $1}')"
+          cat > updates.json <<EOF
+          {
+            "addons": {
+              "research-agent@zotero.example.com": {
+                "updates": [
+                  {
+                    "version": "${version}",
+                    "update_link": "https://github.com/auince/zotero-Agent/releases/download/${GITHUB_REF_NAME}/research-agent-${version}.xpi",
+                    "update_hash": "sha256:${hash}",
+                    "applications": {
+                      "zotero": {
+                        "strict_min_version": "7.9.9",
+                        "strict_max_version": "10.9.9"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+          EOF
+          jq empty updates.json
+
       - name: 创建 GitHub Release 并上传安装包
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release create "$GITHUB_REF_NAME" research-agent-*.xpi --title "Research Agent ${GITHUB_REF_NAME#v}" --generate-notes
+          gh release create "$GITHUB_REF_NAME" research-agent-*.xpi updates.json --title "Research Agent ${GITHUB_REF_NAME#v}" --generate-notes

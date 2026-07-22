@@ -32,6 +32,8 @@ const context = {
 const sidebarSource = fs.readFileSync("src/sidebar.js", "utf8");
 assert.ok(sidebarSource.includes("isNearLogBottom"), "streaming chat must detect when the user has scrolled away from the bottom");
 assert.ok(sidebarSource.includes("scrollToLatest = (force = false)"), "streaming chat must only follow output while the user remains at the bottom");
+const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
+assert.equal(manifest.applications.zotero.update_url, "https://github.com/auince/zotero-Agent/releases/latest/download/updates.json", "plugin updates must come from the GitHub Release manifest");
 vm.createContext(context);
 vm.runInContext(fs.readFileSync("src/agent.js", "utf8"), context);
 
