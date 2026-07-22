@@ -29,6 +29,9 @@ const context = {
   ResearchAgentTools: { definitions: [], definitionsFor: () => [], execute: async () => [] },
   Set, JSON, Error
 };
+const sidebarSource = fs.readFileSync("src/sidebar.js", "utf8");
+assert.ok(sidebarSource.includes("isNearLogBottom"), "streaming chat must detect when the user has scrolled away from the bottom");
+assert.ok(sidebarSource.includes("scrollToLatest = (force = false)"), "streaming chat must only follow output while the user remains at the bottom");
 vm.createContext(context);
 vm.runInContext(fs.readFileSync("src/agent.js", "utf8"), context);
 

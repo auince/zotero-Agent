@@ -167,6 +167,10 @@ var ResearchAgentSidebar = {
     const quickPrompts = doc.createElement("div"); quickPrompts.className = "research-agent-quick-prompts";
     const quickPromptsLabel = doc.createElement("span"); quickPromptsLabel.className = "research-agent-quick-prompts-label"; quickPromptsLabel.textContent = "论文阅读快捷问题";
     const log = doc.createElement("div"); log.className = "research-agent-log";
+    let followLog = true;
+    const isNearLogBottom = () => log.scrollHeight - log.scrollTop - log.clientHeight < 36;
+    const scrollToLatest = (force = false) => { if (force || followLog) log.scrollTop = log.scrollHeight; };
+    log.addEventListener("scroll", () => { followLog = isNearLogBottom(); });
     const composer = doc.createElement("div"); composer.className = "research-agent-composer";
     const input = doc.createElement("textarea"); input.placeholder = "输入你的问题…"; input.setAttribute("aria-label", "向研究助手提问");
     const remaining = doc.createElement("span"); remaining.className = "research-agent-remaining";
@@ -288,7 +292,7 @@ var ResearchAgentSidebar = {
         }
         item.append(actions);
       }
-      log.scrollTop = log.scrollHeight;
+      followLog = true; scrollToLatest(true);
       updateRemaining();
     };
     const persistActiveID = async () => { const appState = await ResearchAgentStorage.getState(); appState.activeConversationID = state.active?.id || null; await ResearchAgentStorage.saveState(appState); };
@@ -383,7 +387,8 @@ var ResearchAgentSidebar = {
         this.addMessage(doc, log, "你", question, true);
       }
       input.value = ""; resizeInput(); updateRemaining(); send.disabled = true; status.textContent = "正在检索、整理记忆并生成回答…";
-      const responseView = this.createResponseView(doc, log);
+      followLog = true; scrollToLatest(true);
+      const responseView = this.createResponseView(doc, log, scrollToLatest);
       try {
         const result = await ResearchAgentAgent.answer(question, { conversation: state.active, rag: ragConfig, onEvent: (event) => responseView.handle(event) });
         responseView.finish(result);
@@ -494,7 +499,7 @@ var ResearchAgentSidebar = {
     box.append(title, list); parent.append(box);
   },
 
-  createResponseView(doc, log) {
+  createResponseView(doc, log, scrollToLatest = () => { log.scrollTop = log.scrollHeight; }) {
     const message = doc.createElement("div"); message.className = "research-agent-message research-agent-response";
     const label = doc.createElement("span"); label.className = "research-agent-role"; label.textContent = "助手";
     const answer = doc.createElement("div"); answer.className = "research-agent-answer"; answer.textContent = "正在准备回答…";
@@ -503,12 +508,12 @@ var ResearchAgentSidebar = {
     const traceSummary = doc.createElement("summary"); traceSummary.textContent = "推理、记忆与检索过程";
     const traceBody = doc.createElement("div"); traceBody.className = "research-agent-trace-body"; trace.append(traceSummary, traceBody); message.append(label, answer, trace); log.append(message);
     let answerStarted = false; let reasoningBlock = null; const steps = [];
-    const addTrace = (text, className = "research-agent-tool-event", type = "tool") => { const entry = doc.createElement("div"); entry.className = className; entry.textContent = text; traceBody.append(entry); steps.push({ type, text }); traceSummary.textContent = `推理、记忆与检索过程 · ${steps.length} 步`; log.scrollTop = log.scrollHeight; };
+    const addTrace = (text, className = "research-agent-tool-event", type = "tool") => { const entry = doc.createElement("div"); entry.className = className; entry.textContent = text; traceBody.append(entry); steps.push({ type, text }); traceSummary.textContent = `推理、记忆与检索过程 · ${steps.length} 步`; scrollToLatest(); };
     const names = { search_knowledge_base: "检索本地知识库", search_web: "搜索网页", search_arxiv: "查询 arXiv", search_github_code: "检索 GitHub 源码" };
     const describe = (event) => `${names[event.name] || event.name}${event.args?.query ? ` · ${event.args.query}` : ""}`;
     return {
-      handle: (event) => { if (event.type === "content") { if (!answerStarted) { answer.replaceChildren(); markdown = ResearchAgentMarkdown.createStreamRenderer(doc, answer); answerStarted = true; } markdown.append(event.text); log.scrollTop = log.scrollHeight; } else if (event.type === "reasoning") { if (!reasoningBlock) { reasoningBlock = doc.createElement("div"); reasoningBlock.className = "research-agent-trace-reasoning"; traceBody.append(reasoningBlock); steps.push({ type: "reasoning", text: "" }); traceSummary.textContent = `推理、记忆与检索过程 · ${steps.length} 步`; } reasoningBlock.append(doc.createTextNode(event.text)); steps.at(-1).text += event.text; } else if (event.type === "memory") addTrace(event.text, "research-agent-tool-event", "memory"); else if (event.type === "tool-start") addTrace(`正在${describe(event)}`); else if (event.type === "tool-finish") addTrace(`${describe(event)} · 找到 ${event.count} 条结果`); else if (event.type === "tool-error") addTrace(`${describe(event)} · 调用失败：${event.error}`); },
-      finish: (result) => { if (!answerStarted) { answer.replaceChildren(); markdown = ResearchAgentMarkdown.createStreamRenderer(doc, answer); markdown.append(result.answer || "模型没有返回正文。"); } markdown.finish(); if (!steps.length) addTrace("模型直接生成回答，未调用外部检索工具。"); trace.open = false; if (result.citations?.length) ResearchAgentSidebar.addCitations(doc, message, result.citations); log.scrollTop = log.scrollHeight; },
+      handle: (event) => { if (event.type === "content") { if (!answerStarted) { answer.replaceChildren(); markdown = ResearchAgentMarkdown.createStreamRenderer(doc, answer); answerStarted = true; } markdown.append(event.text); scrollToLatest(); } else if (event.type === "reasoning") { if (!reasoningBlock) { reasoningBlock = doc.createElement("div"); reasoningBlock.className = "research-agent-trace-reasoning"; traceBody.append(reasoningBlock); steps.push({ type: "reasoning", text: "" }); traceSummary.textContent = `推理、记忆与检索过程 · ${steps.length} 步`; } reasoningBlock.append(doc.createTextNode(event.text)); steps.at(-1).text += event.text; scrollToLatest(); } else if (event.type === "memory") addTrace(event.text, "research-agent-tool-event", "memory"); else if (event.type === "tool-start") addTrace(`正在${describe(event)}`); else if (event.type === "tool-finish") addTrace(`${describe(event)} · 找到 ${event.count} 条结果`); else if (event.type === "tool-error") addTrace(`${describe(event)} · 调用失败：${event.error}`); },
+      finish: (result) => { if (!answerStarted) { answer.replaceChildren(); markdown = ResearchAgentMarkdown.createStreamRenderer(doc, answer); markdown.append(result.answer || "模型没有返回正文。"); } markdown.finish(); if (!steps.length) addTrace("模型直接生成回答，未调用外部检索工具。"); trace.open = false; if (result.citations?.length) ResearchAgentSidebar.addCitations(doc, message, result.citations); scrollToLatest(); },
       fail: (error) => { answer.textContent = `回答失败：${error.message}`; addTrace("请求未完成；请检查模型配置或网络连接。"); trace.open = true; },
       trace: () => steps
     };
