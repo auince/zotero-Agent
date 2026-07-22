@@ -32,7 +32,7 @@ var ResearchAgentMemory = {
   async prepare(conversation, question, apiKey, onEvent) {
     conversation.memory ||= { rootSummary: "", layers: [], compressedMessageIDs: [] };
     if (this.contextUsage(conversation) > this.limit()) {
-      this.emit(onEvent, "会话上下文超过 360K，正在创建分层摘要记忆…");
+      this.emit(onEvent, `会话上下文超过 ${this.limit().toLocaleString()} token，正在创建分层摘要记忆…`);
       await this.compress(conversation, apiKey, onEvent);
     }
     const memory = conversation.memory;

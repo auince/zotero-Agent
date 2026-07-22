@@ -24,8 +24,9 @@
     <html:p class="intro">密钥仅保存在当前 Zotero 配置文件中。填写 API 地址和密钥后，点击“获取模型列表”即可从服务商 API 获取可选模型。</html:p>
 
     <html:section class="service">
-      <html:h3 class="service-title">对话模型（DeepSeek / OpenAI 兼容 API）</html:h3>
-      <html:p class="service-note">用于流式问答、工具调用与每日笔记整理。</html:p>
+      <html:h3 class="service-title">对话模型（开源模型厂商 / OpenAI 兼容 API）</html:h3>
+      <html:p class="service-note">可选 DeepSeek、硅基流动、魔搭 ModelScope、智谱 GLM，或任何 OpenAI 兼容服务。选择厂商后会自动填入官方 API 地址；模型仍由服务商 API 获取。联网工具需要所选模型支持 Function Calling。</html:p>
+      <html:div class="field"><html:label for="ra-chat-provider">模型厂商</html:label><html:select id="ra-chat-provider" aria-label="模型厂商"/></html:div>
       <html:div class="field"><html:label for="ra-deepseek-key">API 密钥</html:label><html:input id="ra-deepseek-key" type="password" preference="extensions.researchAgent.deepseekAPIKey"/></html:div>
       <html:div class="field"><html:label for="ra-deepseek-url">API 地址</html:label><html:input id="ra-deepseek-url" type="url" preference="extensions.researchAgent.deepseekBaseURL"/></html:div>
       <html:div class="field"><html:label for="ra-deepseek-model">对话模型</html:label><html:select id="ra-deepseek-model" aria-label="对话模型"><html:option value="">请先获取模型列表</html:option></html:select></html:div>

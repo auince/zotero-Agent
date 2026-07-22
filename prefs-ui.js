@@ -3,6 +3,13 @@
 var ResearchAgentPreferences = {
   initialized: false,
   startupTimer: null,
+  chatProviders: [
+    { id: "deepseek", label: "DeepSeek", baseURL: "https://api.deepseek.com" },
+    { id: "siliconflow", label: "硅基流动（开源模型）", baseURL: "https://api.siliconflow.cn/v1" },
+    { id: "modelscope", label: "魔搭 ModelScope（开源模型）", baseURL: "https://api-inference.modelscope.cn/v1" },
+    { id: "zhipu", label: "智谱 GLM", baseURL: "https://open.bigmodel.cn/api/paas/v4" },
+    { id: "custom", label: "自定义 OpenAI 兼容服务", baseURL: "" }
+  ],
 
   // Preference-pane scripts run in their own sandbox before the XHTML fragment
   // is inserted. Inline onload handlers cannot see this sandbox. Poll briefly
@@ -23,6 +30,8 @@ var ResearchAgentPreferences = {
     if (this.initialized) return;
     this.initialized = true;
     const doc = document;
+    this.populateChatProviders();
+    doc.getElementById("ra-chat-provider").addEventListener("change", (event) => this.applyChatProvider(event.target.value));
     doc.getElementById("ra-fetch-deepseek-models").addEventListener("click", () => this.safely("ra-deepseek-status", () => this.fetchChatModels()));
     doc.getElementById("ra-test-deepseek").addEventListener("click", () => this.safely("ra-deepseek-status", () => this.testChat()));
     doc.getElementById("ra-fetch-siliconflow-models").addEventListener("click", () => this.safely("ra-siliconflow-status", () => this.fetchKnowledgeModels()));
@@ -37,6 +46,47 @@ var ResearchAgentPreferences = {
     this.bindLivePreference("ra-context-limit", "extensions.researchAgent.contextWindowTokens", true);
     this.bindAutomaticFetch("ra-deepseek-key", "ra-deepseek-url", () => this.fetchChatModels());
     this.bindAutomaticFetch("ra-siliconflow-key", "ra-siliconflow-url", () => this.fetchKnowledgeModels());
+  },
+
+  populateChatProviders() {
+    const select = document.getElementById("ra-chat-provider");
+    select.replaceChildren();
+    for (const provider of this.chatProviders) {
+      const option = document.createElement("option");
+      option.value = provider.id;
+      option.textContent = provider.label;
+      select.append(option);
+    }
+    const configuredURL = this.value("ra-deepseek-url");
+    const saved = Zotero.Prefs.get("extensions.researchAgent.chatProvider", true);
+    const detected = this.chatProviders.find((provider) => provider.baseURL && provider.baseURL === configuredURL)?.id;
+    const savedProvider = this.chatProviders.find((provider) => provider.id === saved);
+    select.value = savedProvider?.baseURL === configuredURL ? saved : (detected || "custom");
+    // Existing DeepSeek configurations predate the provider preference. Preserve them untouched.
+    if (!saved && detected) {
+      select.value = detected;
+      Zotero.Prefs.set("extensions.researchAgent.chatProvider", detected, true);
+    }
+  },
+
+  applyChatProvider(providerID) {
+    const provider = this.chatProviders.find((entry) => entry.id === providerID) || this.chatProviders.at(-1);
+    Zotero.Prefs.set("extensions.researchAgent.chatProvider", provider.id, true);
+    if (provider.baseURL) {
+      const url = document.getElementById("ra-deepseek-url");
+      url.value = provider.baseURL;
+      Zotero.Prefs.set("extensions.researchAgent.deepseekBaseURL", provider.baseURL, true);
+    }
+    const model = document.getElementById("ra-deepseek-model");
+    model.replaceChildren();
+    const placeholder = document.createElement("option"); placeholder.value = ""; placeholder.textContent = "正在获取该厂商的模型列表…";
+    model.append(placeholder);
+    Zotero.Prefs.set("extensions.researchAgent.deepseekModel", "", true);
+    if (this.value("ra-deepseek-key") && this.value("ra-deepseek-url")) {
+      this.safely("ra-deepseek-status", () => this.fetchChatModels());
+    } else {
+      this.setStatus("ra-deepseek-status", "已切换厂商。填写该厂商 API 密钥后即可获取模型列表。");
+    }
   },
 
   bindModel(id, preference) {
@@ -103,7 +153,7 @@ var ResearchAgentPreferences = {
     this.setStatus("ra-deepseek-status", "正在从服务商获取模型列表…");
     try {
       const data = await this.request("GET", this.endpoint(baseURL, "/models"), key);
-      const models = (data.data || []).map((model) => model.id).filter(Boolean).sort();
+      const models = this.modelIDs(data).filter((model) => !/embedding|embed|rerank|text-to-image|image-generation|speech|audio|video/i.test(model)).sort();
       if (!models.length) throw new Error("服务商没有返回可用模型。");
       this.setOptions("ra-deepseek-model", models, Zotero.Prefs.get("extensions.researchAgent.deepseekModel", true));
       this.setStatus("ra-deepseek-status", `已获取 ${models.length} 个模型，请选择后测试连通性。`);
@@ -120,7 +170,7 @@ var ResearchAgentPreferences = {
     this.setStatus("ra-siliconflow-status", "正在从服务商获取模型列表…");
     try {
       const data = await this.request("GET", this.endpoint(baseURL, "/models"), key);
-      const models = (data.data || []).map((model) => model.id).filter(Boolean).sort();
+      const models = this.modelIDs(data).sort();
       if (!models.length) throw new Error("服务商没有返回可用模型。");
       const embedding = models.filter((model) => /embed|bge-m3|text-embedding/i.test(model));
       const rerank = models.filter((model) => /rerank|bge-reranker/i.test(model));
@@ -150,6 +200,13 @@ var ResearchAgentPreferences = {
       "ra-rerank-model": "extensions.researchAgent.rerankModel"
     };
     Zotero.Prefs.set(preferences[id], selected, true);
+  },
+
+  modelIDs(data) {
+    const entries = data.data || data.models || data.model_list || [];
+    return entries.map((model) => typeof model === "string" ? model : (model.id || model.model || model.name))
+      .filter(Boolean)
+      .filter((model, index, list) => list.indexOf(model) === index);
   },
 
   async testChat() {

@@ -5,7 +5,7 @@ var ResearchAgentAgent = {
 
   async answer(question, { onEvent, conversation, rag } = {}) {
     const apiKey = Zotero.Prefs.get("extensions.researchAgent.deepseekAPIKey", true);
-    if (!apiKey) throw new Error("请先在 Zotero 设置 → Research Agent 中填写 DeepSeek API Key。");
+    if (!apiKey) throw new Error("请先在 Zotero 设置 → Research Agent 中填写对话模型 API 密钥。");
     const ragEnabled = rag ? Boolean(rag.enabled) : true;
     const tools = ResearchAgentTools.definitionsFor({ ragEnabled });
     let messages = [
@@ -64,7 +64,7 @@ var ResearchAgentAgent = {
       sawSSE = true;
       let packet;
       try { packet = JSON.parse(data); } catch (_) { return; }
-      if (packet.error) throw new Error(`DeepSeek: ${packet.error.message || JSON.stringify(packet.error)}`);
+      if (packet.error) throw new Error(`模型服务错误：${packet.error.message || JSON.stringify(packet.error)}`);
       const delta = packet.choices?.[0]?.delta || {};
       if (delta.reasoning_content) {
         state.reasoning += delta.reasoning_content;
@@ -109,7 +109,7 @@ var ResearchAgentAgent = {
     consume(true);
     if (!sawSSE && text) {
       const response = JSON.parse(text);
-      if (response.error) throw new Error(`DeepSeek: ${response.error.message || JSON.stringify(response.error)}`);
+      if (response.error) throw new Error(`模型服务错误：${response.error.message || JSON.stringify(response.error)}`);
       const message = response.choices?.[0]?.message || {};
       if (message.reasoning_content) this.emit(onEvent, { type: "reasoning", text: message.reasoning_content });
       if (message.content) this.emit(onEvent, { type: "content", text: message.content });
