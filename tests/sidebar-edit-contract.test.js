@@ -9,5 +9,7 @@ assert.ok(source.includes('"保存修改"'), "editing must expose a save action"
 assert.ok(source.includes('"保存并重新发送"'), "user messages must expose an explicit resend action");
 assert.ok(source.includes("existingMessage = false"), "resend must reuse the edited user message rather than append a duplicate");
 assert.ok(source.includes("Zotero.Items.get(state.active.paper.itemID)"), "resend must fall back to the conversation's associated paper");
+assert.ok(source.includes("await paper.getBestAttachment()"), "conversation switching must resolve the paper's readable attachment");
+assert.ok(source.includes("await Zotero.Reader.open(attachment.id)"), "conversation switching must open the associated paper in Zotero Reader");
 
 console.log("Sidebar edit contract passed.");
