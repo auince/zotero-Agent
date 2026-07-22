@@ -39,6 +39,14 @@ var ResearchAgentSidebar = {
       const attachment = reader?._item || reader?.item;
       const item = attachment?.parentItem || attachment;
       const title = item?.getField?.("title") || "当前论文";
+      // Translate for Zotero builds the same native selection popup and starts
+      // translation from this event. Keep its popup exclusive while automatic
+      // translation is enabled, but retain the selection for the chat composer.
+      const translateAutoEnabled = Boolean(Zotero.PDFTranslate) && Boolean(Zotero.Prefs.get("extensions.zotero.ZoteroPDFTranslate.enableAuto", true));
+      if (translateAutoEnabled) {
+        this.pendingSelection = { text, title, preset: "" };
+        return;
+      }
       const actions = doc.createElement("div");
       const addAction = (label, preset) => {
         const button = doc.createElement("button");
@@ -140,7 +148,7 @@ var ResearchAgentSidebar = {
       knowledgeTab.classList.toggle("is-active", page === "knowledge");
       notesTab.classList.toggle("is-active", page === "notes");
       if (page === "knowledge") refreshEntries().catch((error) => { Zotero.logError(error); status.textContent = `错误：${error.message}`; });
-      if (page === "notes") refreshNotes().catch((error) => { Zotero.logError(error); status.textContent = `无法读取笔记：${error.message}`; });
+      if (page === "notes") renderNotes().catch((error) => { Zotero.logError(error); status.textContent = `无法读取笔记：${error.message}`; });
     };
 
     const state = { active: null, summaries: [], knowledgeBases: [] };
@@ -170,9 +178,14 @@ var ResearchAgentSidebar = {
     const composer = doc.createElement("div"); composer.className = "research-agent-composer";
     const input = doc.createElement("textarea"); input.placeholder = "输入你的问题…"; input.setAttribute("aria-label", "向研究助手提问");
     const remaining = doc.createElement("span"); remaining.className = "research-agent-remaining";
+    const useSelection = this.button(doc, "添加最近选区", () => {
+      if (!this.pendingSelection) { status.textContent = "请先在论文阅读器中选中一段文本。"; return; }
+      receiveSelectedText(this.pendingSelection);
+    });
+    useSelection.classList.add("research-agent-selection-button");
     const send = this.button(doc, "发送", () => ask()); send.classList.add("research-agent-primary");
     const sendLine = doc.createElement("div"); sendLine.className = "research-agent-sendline";
-    const hint = doc.createElement("span"); hint.className = "research-agent-hint"; hint.textContent = "⌘ / Ctrl + Enter 发送"; sendLine.append(hint, remaining, send);
+    const hint = doc.createElement("span"); hint.className = "research-agent-hint"; hint.textContent = "⌘ / Ctrl + Enter 发送"; sendLine.append(hint, useSelection, remaining, send);
     composer.append(input, sendLine); chatPanel.append(rag, context, quickPrompts, log, composer);
     const resizeInput = () => {
       input.style.height = "auto";
