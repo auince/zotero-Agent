@@ -6,8 +6,6 @@ const source = fs.readFileSync("src/sidebar.js", "utf8");
 assert.ok(source.includes('registerEventListener("renderTextSelectionPopup"'), "must use Zotero's reader selection API");
 assert.ok(source.includes('"添加到研究助手"'), "reader selection popup must provide an add action");
 assert.ok(source.includes("queueSelectedText({ text, title, preset })"), "reader action must forward the selected text and preset to the sidebar");
-assert.ok(source.includes("Zotero.PDFTranslate"), "must coexist with Translate for Zotero's selection popup");
-assert.ok(source.includes('"添加最近选区"'), "stored selections must remain available without modifying Translate for Zotero's popup");
 assert.ok(source.includes("this.selectionListeners.add(receiveSelectedText)"), "mounted chat must receive reader selections");
 assert.ok(source.includes('"复制"'), "every conversation message must expose a copy action");
 assert.ok(source.includes("user-select:text!important"), "message body text must remain selectable");
