@@ -19,7 +19,7 @@ jobs:
       - name: 生成 XPI 安装包
         shell: bash
         run: |
-          version="$(node -p \"require('./manifest.json').version\")"
+          version="$(node -p "require('./manifest.json').version")"
           zip -X -r "research-agent-${version}.xpi" manifest.json bootstrap.js prefs.js prefs.xhtml prefs-ui.js chrome src locale icons vendor LICENSE README.md
           unzip -t "research-agent-${version}.xpi"
 
