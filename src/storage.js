@@ -163,7 +163,29 @@ var ResearchAgentStorage = {
 
   async listConversations() {
     const index = await this.getConversationIndex();
+    await this.migrateConversationTitles(index);
     return [...index.conversations].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  },
+
+  async migrateConversationTitles(index) {
+    // Version 0.4.5 introduced paper-aware automatic titles. Reconcile existing
+    // per-conversation files once, without altering their meaningful update time.
+    if (index.titleSchemaVersion >= 2) return;
+    for (const summary of index.conversations) {
+      const conversation = await this.readJSON(this.conversationPath(summary.id), null);
+      if (!conversation) continue;
+      const previousTitle = conversation.title;
+      const previousMode = conversation.titleMode;
+      this.refreshAutoTitle(conversation);
+      if (conversation.title !== previousTitle || conversation.titleMode !== previousMode) {
+        await this.writeJSON(this.conversationPath(conversation.id), conversation);
+      }
+      summary.title = conversation.title;
+      summary.paper = conversation.paper || null;
+      summary.messageCount = (conversation.messages || []).length;
+    }
+    index.titleSchemaVersion = 2;
+    await this.writeJSON(this.conversationIndexPath, index);
   },
 
   async getConversation(id) {

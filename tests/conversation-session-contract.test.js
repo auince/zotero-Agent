@@ -25,6 +25,7 @@ conversation.messages.push({ role: "user", content: "请解释本文的实验设
 context.ResearchAgentStorage.refreshAutoTitle(conversation);
 assert.match(conversation.title, /一篇关联论文/);
 assert.match(conversation.title, /实验设计/);
+assert.ok(fs.readFileSync("src/storage.js", "utf8").includes("migrateConversationTitles"), "existing sessions must be migrated to paper-aware titles");
 
 const sidebar = fs.readFileSync("src/sidebar.js", "utf8");
 assert.ok(sidebar.includes("switchRequest"), "session selection must reject stale asynchronous switches");
