@@ -84,16 +84,21 @@ var ResearchAgentStorage = {
 
   newConversation({ title, item, createdAt } = {}) {
     const at = createdAt || new Date().toISOString();
-    return {
+    const conversation = {
       version: 2,
       id: this.makeConversationID(),
       title: title || "新对话",
+      // Titles are derived from the associated paper and the conversation's first
+      // question. A future manual rename UI can opt into `custom` explicitly.
+      titleMode: "auto",
       createdAt: at,
       updatedAt: at,
       paper: item ? this.paperFromItem(item) : null,
       messages: [],
       memory: { rootSummary: "", layers: [], compressedMessageIDs: [] }
     };
+    if (conversation.titleMode === "auto") conversation.title = this.autoTitle(conversation);
+    return conversation;
   },
 
   paperFromItem(item) {
@@ -106,8 +111,26 @@ var ResearchAgentStorage = {
     return { id: `message-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`, role, content: String(content || ""), createdAt: createdAt || new Date().toISOString(), ...extra };
   },
 
-  titleFromText(text) {
-    return String(text || "新对话").replace(/\s+/g, " ").trim().slice(0, 34) || "新对话";
+  titleFromText(text, maximumLength = 34) {
+    return String(text || "新对话").replace(/\s+/g, " ").trim().slice(0, maximumLength) || "新对话";
+  },
+
+  autoTitle(conversation) {
+    const paperTitle = String(conversation.paper?.title || "").replace(/\s+/g, " ").trim();
+    const firstQuestion = (conversation.messages || []).find((message) => message.role === "user")?.content;
+    // Before the first question, the paper is the most useful and stable session name.
+    if (!firstQuestion) return paperTitle || "新对话";
+    const questionTitle = this.titleFromText(firstQuestion, paperTitle ? 28 : 42);
+    if (!paperTitle) return questionTitle;
+    if (questionTitle === paperTitle) return paperTitle;
+    return `${this.titleFromText(paperTitle, 38)} · ${questionTitle}`;
+  },
+
+  refreshAutoTitle(conversation) {
+    if (!conversation.titleMode || conversation.titleMode === "auto") {
+      conversation.titleMode = "auto";
+      conversation.title = this.autoTitle(conversation);
+    }
   },
 
   async createConversation(options = {}) {
@@ -121,9 +144,7 @@ var ResearchAgentStorage = {
     conversation.updatedAt = new Date().toISOString();
     conversation.messages ||= [];
     conversation.memory ||= { rootSummary: "", layers: [], compressedMessageIDs: [] };
-    if (conversation.messages.length && (!conversation.title || conversation.title === "新对话")) {
-      conversation.title = this.titleFromText(conversation.messages.find((message) => message.role === "user")?.content);
-    }
+    this.refreshAutoTitle(conversation);
     await this.writeJSON(this.conversationPath(conversation.id), conversation);
     const index = suppliedIndex || await this.getConversationIndex();
     const summary = {

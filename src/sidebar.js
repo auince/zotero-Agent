@@ -86,7 +86,7 @@ var ResearchAgentSidebar = {
       .research-agent-tab:hover { background:color-mix(in srgb,var(--ra-accent) 10%,transparent); }.research-agent-tab.is-active{background:var(--ra-accent);color:#fff;box-shadow:0 1px 4px color-mix(in srgb,var(--ra-accent) 35%,transparent)}
       .research-agent-status { padding:7px 9px; border-radius:8px; background:var(--ra-accent-weak); color:color-mix(in srgb,var(--ra-accent) 78%,currentColor); font-size:.9em; line-height:1.35; }.research-agent-panel{display:none;min-height:0}.research-agent-panel.is-active{display:flex;flex:1;flex-direction:column;gap:10px}
       .research-agent-sessionbar { display:flex; flex:0 0 auto; align-items:center; gap:6px; min-width:0; }.research-agent-session-title { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:700; }.research-agent-sessionbar .research-agent-primary{flex:0 0 auto}.research-agent button { min-height:29px; padding:5px 9px; border:1px solid var(--ra-border); border-radius:7px; background:var(--material-sidepane,#fff); color:inherit; font:menu; cursor:pointer; }.research-agent button:hover:not(:disabled){border-color:var(--ra-accent);background:var(--ra-accent-weak)}.research-agent button:disabled{cursor:wait;opacity:.65}.research-agent-primary{border-color:var(--ra-accent)!important;background:var(--ra-accent)!important;color:#fff!important;font-weight:650!important}
-      .research-agent-session-drawer { display:none; flex:1 1 0; flex-direction:column; gap:8px; min-height:0; overflow:hidden; padding:10px; border:1px solid var(--ra-border); border-radius:10px; background:color-mix(in srgb,var(--ra-accent) 4%,transparent); }.research-agent-session-drawer.is-open{display:flex}.research-agent-session-list{display:flex;flex:1 1 0;flex-direction:column;align-items:stretch;gap:5px;min-height:0;overflow-x:hidden;overflow-y:auto}.research-agent-session-item{box-sizing:border-box;display:flex;flex:0 0 auto;flex-direction:column;align-items:flex-start;gap:3px;width:100%;min-height:auto!important;padding:7px 8px!important;overflow:hidden;text-align:left;line-height:1.3}.research-agent-session-item.is-active{border-color:var(--ra-accent);background:var(--ra-accent-weak)}.research-agent-session-item small{display:block;width:100%;overflow:hidden;color:var(--fill-secondary,#687583);font-size:.78em;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}.research-agent-session-actions{display:flex;flex-wrap:wrap;gap:6px}.research-agent-session-drawer > .research-agent-session-toggle,.research-agent-session-drawer > button{flex:0 0 auto}.research-agent-session-toggle{display:flex;align-items:center;gap:6px;color:var(--fill-secondary,#687583);font-size:.88em}
+      .research-agent-session-drawer { display:none; flex:1 1 0; flex-direction:column; gap:8px; min-height:0; overflow:hidden; padding:10px; border:1px solid var(--ra-border); border-radius:10px; background:color-mix(in srgb,var(--ra-accent) 4%,transparent); }.research-agent-session-drawer.is-open{display:flex}.research-agent-session-list{display:flex;flex:1 1 0;flex-direction:column;align-items:stretch;gap:7px;min-height:0;overflow-x:hidden;overflow-y:auto}.research-agent-session-card{display:flex;flex:0 0 auto;flex-direction:column;min-width:0;overflow:hidden;border:1px solid var(--ra-border);border-radius:8px;background:var(--ra-surface-raised)}.research-agent-session-card.is-active{border-color:var(--ra-accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--ra-accent) 18%,transparent)}.research-agent-session-item{box-sizing:border-box;display:block;flex:0 0 auto;width:100%;min-height:auto!important;padding:7px 8px!important;overflow:hidden;border:0!important;border-radius:0!important;background:transparent!important;text-align:left;line-height:1.3;text-overflow:ellipsis;white-space:nowrap}.research-agent-session-card.is-active .research-agent-session-item{background:var(--ra-accent-weak)!important}.research-agent-session-paper{display:-webkit-box;min-width:0;max-height:2.7em;padding:5px 8px;overflow:hidden;border-top:1px solid var(--ra-border);-webkit-box-orient:vertical;-webkit-line-clamp:2;color:var(--fill-secondary,#687583);font-size:.78em;line-height:1.35;overflow-wrap:anywhere}.research-agent-session-actions{display:flex;flex-wrap:wrap;gap:6px}.research-agent-session-drawer > .research-agent-session-toggle,.research-agent-session-drawer > button{flex:0 0 auto}.research-agent-session-toggle{display:flex;align-items:center;gap:6px;color:var(--fill-secondary,#687583);font-size:.88em}
       .research-agent-rag { display:flex; flex-wrap:wrap; align-items:center; gap:7px; padding:8px 10px; border:1px solid var(--ra-border); border-radius:10px; background:color-mix(in srgb,var(--ra-accent) 3%,transparent); }.research-agent-rag label{display:flex;align-items:center;gap:5px;font-weight:650}.research-agent-rag select{flex:1;min-width:150px;box-sizing:border-box;min-height:28px;border:1px solid var(--ra-border);border-radius:6px;background:var(--material-sidepane,#fff);color:inherit;font:menu}.research-agent-rag select:disabled{opacity:.55}.research-agent-rag-note{width:100%;color:var(--fill-secondary,#687583);font-size:.82em}
       .research-agent-context{padding:9px 10px;border:1px solid var(--ra-border);border-radius:10px;background:color-mix(in srgb,var(--ra-accent) 4%,transparent)}.research-agent-context-label{display:block;margin-bottom:3px;color:var(--fill-secondary,#687583);font-size:.82em;font-weight:600}.research-agent-selected-item{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-weight:650;line-height:1.35}
       .research-agent-log{flex:1;min-height:200px;overflow:auto;padding:12px;border:1px solid var(--ra-border);border-radius:11px;background:var(--material-sidepane,#fff);box-shadow:inset 0 1px 0 color-mix(in srgb,currentColor 4%,transparent);line-height:1.48}.research-agent-message{margin:0 0 12px;padding:8px 10px;border-radius:9px;background:color-mix(in srgb,currentColor 4%,transparent)}.research-agent-message:last-child{margin-bottom:0}.research-agent-message.is-user{background:var(--ra-accent-weak)}.research-agent-role{display:block;margin-bottom:3px;color:var(--ra-accent);font-size:.84em;font-weight:700}.research-agent-message-content{white-space:pre-wrap}.research-agent-message-actions{display:flex;justify-content:flex-end;gap:5px;margin-top:7px}.research-agent-message-actions button{min-height:24px;padding:2px 6px;font-size:.8em}
@@ -143,7 +143,7 @@ var ResearchAgentSidebar = {
       if (page === "notes") renderNotes().catch((error) => { Zotero.logError(error); status.textContent = `无法读取笔记：${error.message}`; });
     };
 
-    const state = { active: null, summaries: [], knowledgeBases: [] };
+    const state = { active: null, summaries: [], knowledgeBases: [], switchRequest: 0 };
     const sessionBar = doc.createElement("div"); sessionBar.className = "research-agent-sessionbar";
     const sessionTitle = doc.createElement("div"); sessionTitle.className = "research-agent-session-title";
     const newSession = this.button(doc, "新对话", () => createSession()); newSession.classList.add("research-agent-primary"); sessionBar.append(sessionTitle, newSession);
@@ -244,10 +244,15 @@ var ResearchAgentSidebar = {
     const renderSessions = () => {
       sessionList.replaceChildren();
       for (const summary of state.summaries) {
+        const card = doc.createElement("article"); card.className = "research-agent-session-card";
+        card.classList.toggle("is-active", summary.id === state.active?.id);
         const entry = this.button(doc, summary.title, () => loadSession(summary.id));
-        entry.classList.add("research-agent-session-item"); entry.classList.toggle("is-active", summary.id === state.active?.id);
-        const meta = doc.createElement("small"); meta.textContent = `${summary.paper?.title || "未关联文献"} · ${this.shortDate(summary.updatedAt)}`;
-        entry.append(meta); sessionList.append(entry);
+        entry.classList.add("research-agent-session-item");
+        entry.title = summary.title;
+        const paper = doc.createElement("div"); paper.className = "research-agent-session-paper";
+        paper.textContent = `关联文献：${summary.paper?.title || "未关联文献"} · ${this.shortDate(summary.updatedAt)}`;
+        paper.title = summary.paper?.title || "未关联文献";
+        card.append(entry, paper); sessionList.append(card);
       }
     };
     const renderCitations = (target, citations) => {
@@ -311,9 +316,23 @@ var ResearchAgentSidebar = {
       } catch (error) { Zotero.logError(error); status.textContent = "无法打开关联论文，已保留当前页面。"; }
     };
     const loadSession = async (id) => {
+      const request = ++state.switchRequest;
+      if (state.active?.id !== id) status.textContent = "正在切换会话…";
       const conversation = await ResearchAgentStorage.getConversation(id);
-      if (!conversation) return;
-      state.active = conversation; await persistActiveID(); renderConversation(); await syncPaper();
+      // A second click or a later selection always wins; an older async read must
+      // never redraw the previous conversation after the paper has already changed.
+      if (!conversation || request !== state.switchRequest) return;
+      state.active = conversation;
+      await persistActiveID();
+      if (request !== state.switchRequest) return;
+      renderSessions();
+      renderConversation();
+      // Show the selected session immediately. Paper synchronisation may cause Zotero
+      // to re-render the pane, in which case the persisted activeConversationID restores it.
+      activate("chat");
+      await syncPaper();
+      if (request !== state.switchRequest) return;
+      status.textContent = "已切换会话。";
     };
     const createSession = async () => {
       state.active = await ResearchAgentStorage.createConversation({ item: currentItem() || initialItem });
